@@ -1,4 +1,5 @@
 #if HYBRID_ENTITIES_CAMERA_CONVERSION
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -12,13 +13,20 @@ using quaternion = Unity.Mathematics.quaternion;
 
 namespace RTTCamera
 {
-    [UpdateInGroup(typeof(InitializationSystemGroup))]
-    [UpdateAfter(typeof(GatherCameraInputSystem))]
+    [RequireMatchingQueriesForUpdate]
+    [UpdateInGroup(typeof(InitializationSystemGroup)), UpdateAfter(typeof(GatherCameraInputSystem))]
     public partial class CameraMovementSystem : SystemBase
     {
+        private EntityQuery query;
         protected override void OnCreate()
         {
-            RequireForUpdate<Tag_Camera>();
+            query = GetEntityQuery
+            (
+                ReadOnly<Tag_Camera>(),
+                ReadOnly<Data_CameraSettings>(),
+                ReadOnly<Data_CameraInputs>()
+            );
+            RequireForUpdate(query);
         }
 
         protected override void OnStartRunning()
@@ -44,44 +52,48 @@ namespace RTTCamera
         protected override void OnUpdate()
         {
             float deltaTime =  SystemAPI.Time.DeltaTime;
-            
+            MoveCamera(deltaTime);
+        }
+
+        private void MoveCamera(float deltaTime)
+        {
             Entities
             .WithName("CameraMovement")
             .WithBurst()
             .WithAll<Tag_Camera>()
-            .ForEach((ref Translation translation, ref Rotation rotation, in LocalToWorld ltw, in Data_CameraInputs camInputs, in Data_CameraSettings settings) => 
+            .ForEach((ref TransformAspect transform, in Data_CameraInputs camInputs, in Data_CameraSettings settings) => 
             {
                 //TRANSLATION
-                float3 cameraForwardXZ = new float3(ltw.Forward.x, 0, ltw.Forward.z);
-                float2 moveAxis = camInputs.MoveAxis;
-
-                float3 cameraRightValue = select(ltw.Right, -ltw.Right, moveAxis.x > 0);
-                float3 xAxisRotation = select(zero, cameraRightValue, camInputs.MoveAxis.x != 0);
+                float3 cameraForwardXZ = new (transform.Forward.x, 0, transform.Forward.z);
+                half2 moveAxis = half2(camInputs.MoveAxis);
+                //float2 moveAxis = camInputs.MoveAxis;
+                
+                float3 cameraRightValue   = select(transform.Right, -transform.Right, moveAxis.x > 0);
+                float3 xAxisRotation      = select(zero, cameraRightValue, moveAxis.x != 0);
 
                 float3 cameraForwardValue = select(-cameraForwardXZ, cameraForwardXZ, moveAxis.y > 0);
-                float3 zAxisRotation = select(zero, cameraForwardValue, camInputs.MoveAxis.y != 0);
+                float3 zAxisRotation      = select(zero, cameraForwardValue, moveAxis.y != 0);
 
-                float3 currentPosition = translation.Value;
-                float ySpeedMultiplier = max(1f, currentPosition.y);
-                int moveSpeed = settings.BaseMoveSpeed * select(1, settings.Sprint, camInputs.IsSprint);
+                float3 currentPosition    = transform.Position;
+                float ySpeedMultiplier    = max(1f, currentPosition.y);
+                int moveSpeed             = settings.BaseMoveSpeed * select(1, settings.Sprint, camInputs.IsSprint);
 
-                float3 zoomPosition = camInputs.Zoom * settings.ZoomSpeed * deltaTime * up();
+                float3 zoomPosition       = camInputs.Zoom * settings.ZoomSpeed * deltaTime * up();
                 float3 horizontalPosition = ySpeedMultiplier * moveSpeed * deltaTime * (xAxisRotation + zAxisRotation);
-                translation.Value = translation.Value + zoomPosition + horizontalPosition;
+                transform.Position        = currentPosition + zoomPosition + horizontalPosition;
 
                 //ROTATION
-                if(!any(camInputs.RotationDragDistanceXY)) return;
-                quaternion rotationVal = rotation.Value;
+                if(!any((int2)camInputs.RotationDragDistanceXY)) return;
+                quaternion rotationVal = transform.Rotation;
             
                 float2 distanceXY = camInputs.RotationDragDistanceXY;
                 rotationVal = RotateFWorld(rotationVal,0f,distanceXY.x * deltaTime,0f);//Rotation Horizontal
-                rotation.Value = rotationVal;
-
+                transform.Rotation = rotationVal;
+                
                 rotationVal = RotateFSelf(rotationVal,-distanceXY.y * deltaTime,0f,0f);//Rotation Vertical
                 float angleX = clampAngle(degrees(rotationVal.ToEulerAngles(RotationOrder.ZXY).x), settings.MinClamp, settings.MaxClamp);
-                
-                float2 currentRotationEulerYZ = rotation.Value.ToEulerAngles(RotationOrder.ZXY).yz;
-                rotation.Value = quaternion.EulerZXY(new float3(radians(angleX), currentRotationEulerYZ));
+                float2 currentRotationEulerYZ = transform.Rotation.ToEulerAngles(RotationOrder.ZXY).yz;
+                transform.Rotation = quaternion.EulerZXY(new float3(radians(angleX), currentRotationEulerYZ));
             }).Run();
         }
     }
