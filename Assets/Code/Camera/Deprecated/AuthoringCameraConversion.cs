@@ -1,3 +1,4 @@
+/*
 #if HYBRID_ENTITIES_CAMERA_CONVERSION
 using Unity.Entities;
 using Unity.Mathematics;
@@ -38,3 +39,4 @@ namespace RTTCamera
     }
 }
 #endif
+*/

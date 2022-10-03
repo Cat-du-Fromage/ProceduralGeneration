@@ -11,8 +11,7 @@ GameObject:
   - component: {fileID: 3184840841917519638}
   - component: {fileID: 3184840841917519637}
   - component: {fileID: 3184840841917519636}
-  - component: {fileID: 3184840841917519626}
-  - component: {fileID: 3184840841917519625}
+  - component: {fileID: 1877623818119867403}
   - component: {fileID: 785071983862904658}
   m_Layer: 0
   m_Name: RTSCameraECS
@@ -50,9 +49,17 @@ Camera:
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
-  m_FocalLength: 50
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
@@ -87,7 +94,7 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3184840841917519624}
   m_Enabled: 1
---- !u!114 &3184840841917519626
+--- !u!114 &1877623818119867403
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -96,24 +103,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 3184840841917519624}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e5542e2c94ce9e3439768a0bd5889d6e, type: 3}
+  m_Script: {fileID: 11500000, guid: 60bc0a1bcf4044e4d961c49d3e82def4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraData: {fileID: 11400000, guid: d6c55a6dab04d5b4381f86db380bfd33, type: 2}
+  CameraData: {fileID: 11400000, guid: d6c55a6dab04d5b4381f86db380bfd33, type: 2}
   BoxSelection: 1
---- !u!114 &3184840841917519625
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3184840841917519624}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea7d7495833204790ba1d3a8755397f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ConversionMode: 0
 --- !u!114 &785071983862904658
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,12 +158,16 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   hasPersistentHistory: 0
+  screenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  screenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   allowDeepLearningSuperSampling: 1
   deepLearningSuperSamplingUseCustomQualitySettings: 0
   deepLearningSuperSamplingQuality: 0
   deepLearningSuperSamplingUseCustomAttributes: 0
   deepLearningSuperSamplingUseOptimalSettings: 1
   deepLearningSuperSamplingSharpening: 0
+  fsrOverrideSharpness: 0
+  fsrSharpness: 0.92
   exposureTarget: {fileID: 0}
   materialMipBias: 0
   m_RenderingPathCustomFrameSettings:
@@ -192,7 +190,7 @@ MonoBehaviour:
       data1: 0
       data2: 0
   defaultFrameSettings: 0
-  m_Version: 8
+  m_Version: 9
   m_ObsoleteRenderingPath: 0
   m_ObsoleteFrameSettings:
     overrides: 0

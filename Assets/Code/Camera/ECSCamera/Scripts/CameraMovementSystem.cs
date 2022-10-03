@@ -69,28 +69,27 @@ namespace RTTCamera
                 //float2 moveAxis = camInputs.MoveAxis;
                 
                 float3 cameraRightValue   = select(transform.Right, -transform.Right, moveAxis.x > 0);
-                float3 xAxisRotation      = select(zero, cameraRightValue, moveAxis.x != 0);
+                float3 xAxisMove          = select(zero, cameraRightValue, moveAxis.x != 0);
 
                 float3 cameraForwardValue = select(-cameraForwardXZ, cameraForwardXZ, moveAxis.y > 0);
-                float3 zAxisRotation      = select(zero, cameraForwardValue, moveAxis.y != 0);
-
-                float3 currentPosition    = transform.Position;
-                float ySpeedMultiplier    = max(1f, currentPosition.y);
+                float3 zAxisMove          = select(zero, cameraForwardValue, moveAxis.y != 0);
+                
+                float ySpeedMultiplier    = max(1f, transform.Position.y);
                 int moveSpeed             = settings.BaseMoveSpeed * select(1, settings.Sprint, camInputs.IsSprint);
 
-                float3 zoomPosition       = camInputs.Zoom * settings.ZoomSpeed * deltaTime * up();
-                float3 horizontalPosition = ySpeedMultiplier * moveSpeed * deltaTime * (xAxisRotation + zAxisRotation);
-                transform.Position        = currentPosition + zoomPosition + horizontalPosition;
-
+                float3 zoomPosition       = camInputs.Zoom * settings.ZoomSpeed * up();
+                float3 horizontalPosition = ySpeedMultiplier * moveSpeed * (xAxisMove + zAxisMove);
+                transform.TranslateLocal((zoomPosition + horizontalPosition) * deltaTime);
+                
                 //ROTATION
-                if(!any((int2)camInputs.RotationDragDistanceXY)) return;
+                if(!any(camInputs.RotationDragDistanceXY)) return;
                 quaternion rotationVal = transform.Rotation;
             
-                float2 distanceXY = camInputs.RotationDragDistanceXY;
-                rotationVal = RotateFWorld(rotationVal,0f,distanceXY.x * deltaTime,0f);//Rotation Horizontal
+                float2 distanceXY = camInputs.RotationDragDistanceXY * deltaTime;
+                rotationVal = RotateFWorld(rotationVal,0f,distanceXY.x,0f);//Rotation Horizontal
                 transform.Rotation = rotationVal;
                 
-                rotationVal = RotateFSelf(rotationVal,-distanceXY.y * deltaTime,0f,0f);//Rotation Vertical
+                rotationVal = RotateFSelf(rotationVal,-distanceXY.y,0f,0f);//Rotation Vertical
                 float angleX = clampAngle(degrees(rotationVal.ToEulerAngles(RotationOrder.ZXY).x), settings.MinClamp, settings.MaxClamp);
                 float2 currentRotationEulerYZ = transform.Rotation.ToEulerAngles(RotationOrder.ZXY).yz;
                 transform.Rotation = quaternion.EulerZXY(new float3(radians(angleX), currentRotationEulerYZ));

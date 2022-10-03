@@ -48,28 +48,29 @@ namespace RTTCamera
         protected override void OnUpdate()
         {
             InputSystem.Update();
-
-            bool isSprinting = cameraControls.Faster.IsPressed();
-            float zoom = zoomValue;
-            float2 moveAxis = cameraControls.Mouvement.ReadValue<Vector2>();
-            float2 startUpdated = startMouseDrag;
-            float2 endUpdated = endMouseDrag;
             
+            bool isSprinting = cameraControls.Faster.IsPressed();
+            float2 moveAxis = cameraControls.Mouvement.ReadValue<Vector2>();
+
+            GatherInputs(isSprinting, zoomValue, moveAxis, startMouseDrag, endMouseDrag);
+            startMouseDrag = endMouseDrag;
+        }
+
+        private void GatherInputs(bool isSprinting, float zoom, float2 moveAxis, float2 startUpdated, float2 endUpdated)
+        {
             Entities
+            .WithName("GatherInputs")
             .WithBurst()
             .WithAll<Tag_Camera>()
             .ForEach((ref Data_CameraInputs cameraInputs, in Data_CameraSettings settings) =>
             {
                 float2 distanceXY = (endUpdated - startUpdated) * settings.RotationSpeed;
-                cameraInputs = new Data_CameraInputs()
-                {
-                    IsSprint = isSprinting,
-                    Zoom = zoom,
-                    MoveAxis = moveAxis,
-                    RotationDragDistanceXY = distanceXY
-                };
+
+                cameraInputs.IsSprint = isSprinting;
+                cameraInputs.Zoom = zoom;
+                cameraInputs.MoveAxis = moveAxis;
+                cameraInputs.RotationDragDistanceXY = distanceXY;
             }).Run();
-            startMouseDrag = endMouseDrag;
         }
         
         private void OnRotationStart(InputAction.CallbackContext ctx) => startMouseDrag = ctx.ReadValue<Vector2>();
