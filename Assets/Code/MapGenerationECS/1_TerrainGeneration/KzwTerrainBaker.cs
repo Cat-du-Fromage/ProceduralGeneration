@@ -16,6 +16,7 @@ namespace KWZTerrainECS
 {
     public class KzwTerrainBaker : MonoBehaviour
     {
+        [field:SerializeField] public Material ChunkMaterial{ get; private set; }
         [field:SerializeField] public TerrainSettings TerrainSettings { get; private set; }
         [field:SerializeField] public SpawnSettings SpawnSettings { get; private set; }
         
@@ -31,8 +32,17 @@ namespace KWZTerrainECS
                 DynamicBuffer<BufferChunk> chunksBuffer = AddBuffer<BufferChunk>();
                 chunksBuffer.EnsureCapacity(authoring.TerrainSettings.ChunksCount);
                 
+                AddComponent<TagUnintitializeTerrain>();
                 AddComponent((DataTerrain)authoring.TerrainSettings);
                 AddComponent((DataChunk)authoring.TerrainSettings.ChunkSettings);
+                
+                AddComponent(new PrefabChunk()
+                {
+                    Value = GetEntity(authoring.TerrainSettings.ChunkSettings.Prefab)
+                });
+
+                DependsOn(authoring.ChunkMaterial);
+                AddComponentObject(new ObjMaterialTerrain(){Value = authoring.ChunkMaterial});
             }
         }
         
@@ -48,6 +58,7 @@ namespace KWZTerrainECS
                 Positions = positions
             };
             job.ScheduleParallel(positions.Length,JobWorkerCount - 1, default).Complete();
+            
             
             for (int i = 0; i < chunkArray.Length; i++)
             {

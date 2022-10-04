@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Physics.Authoring;
 using Unity.Rendering;
@@ -28,6 +29,24 @@ namespace KWZTerrainECS
         
         public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
         {
+            RenderMeshDescription desc = new RenderMeshDescription
+            (
+                shadowCastingMode: ShadowCastingMode.Off,
+                receiveShadows: false
+            );
+
+            // Create an array of mesh and material required for runtime rendering.
+            RenderMeshArray renderMeshArray = new RenderMeshArray
+            (
+                new Material[] { meshRender.material }, new Mesh[] { meshFilter.mesh }
+            );
+            
+            RenderMeshUtility.AddComponents(
+                entity,
+                dstManager,
+                desc,
+                renderMeshArray,
+                MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
             //RenderMeshDescription desc = new (meshFilter.mesh, meshRender.material);
             //RenderMeshUtility.AddComponents(entity, dstManager, desc);
         }

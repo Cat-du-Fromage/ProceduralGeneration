@@ -44,11 +44,11 @@ namespace KWZTerrainECS
             return jh;
         }
 
-        public static JobHandle SetMeshJob(ChunkSettings chunkSetting, MeshData meshData, NativeArray<float> noiseMap, JobHandle jobHandle = default)
+        public static JobHandle SetMeshJob(DataChunk chunkSetting, MeshData meshData, NativeArray<float> noiseMap, JobHandle jobHandle = default)
         {
             JMeshDatas job = new()
             {
-                MapSizeX = chunkSetting.NumVertexPerLine,
+                MapSizeX = chunkSetting.NumVerticesPerLine,
                 NoiseMap = noiseMap,
                 Vertices = meshData.GetVertexData<float3>(stream: 0),
                 Uvs = meshData.GetVertexData<half2>(stream: 3),
@@ -58,11 +58,11 @@ namespace KWZTerrainECS
             return jh;
         }
 
-        public static JobHandle SetNormalsJob(ChunkSettings chunkSetting, MeshData meshData, JobHandle jobHandle = default)
+        public static JobHandle SetNormalsJob(DataChunk chunkSetting, MeshData meshData, JobHandle jobHandle = default)
         {
             JNormals job = new()
             {
-                MapSizeX = chunkSetting.NumVertexPerLine,
+                MapSizeX = chunkSetting.NumVerticesPerLine,
                 Vertices = meshData.GetVertexData<float3>(stream: 0),
                 Normals = meshData.GetVertexData<float3>(stream: 1),
             };
@@ -70,7 +70,7 @@ namespace KWZTerrainECS
             return jh;
         }
 
-        public static JobHandle SetTangentsJob(ChunkSettings chunkSettings, MeshData meshData, JobHandle jobHandle = default)
+        public static JobHandle SetTangentsJob(DataChunk chunkSettings, MeshData meshData, JobHandle jobHandle = default)
         {
             NativeArray<float3> tangent1 = new(chunkSettings.VerticesCount,Allocator.TempJob,NativeArrayOptions.UninitializedMemory);
             NativeArray<float3> tangent2 = new(chunkSettings.VerticesCount,Allocator.TempJob,NativeArrayOptions.UninitializedMemory);
