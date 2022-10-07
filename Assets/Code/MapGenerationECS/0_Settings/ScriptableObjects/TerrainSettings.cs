@@ -57,9 +57,9 @@ namespace KWZTerrainECS
         {
             return new DataTerrain
             {
-                NumChunksXY = terrain.NumChunkXY,
-                NumQuadsXY = terrain.NumQuadsXY,
-                NumVerticesXY = terrain.NumVerticesXY
+                NumChunksXY = new int2(terrain.NumChunkX, terrain.NumChunkY),
+                NumQuadsXY = new int2(terrain.NumQuadX, terrain.NumQuadY),
+                NumVerticesXY = new int2(terrain.NumVerticesX, terrain.NumVerticesY)
             };
         }
         

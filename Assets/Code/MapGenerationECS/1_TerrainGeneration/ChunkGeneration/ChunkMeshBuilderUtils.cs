@@ -18,29 +18,29 @@ namespace KWZTerrainECS
 {
     public static class ChunkMeshBuilderUtils
     {
-        public static JobHandle SetNoiseJob(TerrainSettings terrain, int2 chunkCoord, NativeArray<float> noiseMap, JobHandle jobHandle = default)
+        public static JobHandle SetNoiseJob(DataNoise noiseData, DataChunk chunk, int2 chunkCoord, NativeArray<float> noiseMap, JobHandle jobHandle = default)
         {
-            NativeArray<float2> octaveOffsets = new(terrain.NoiseSettings.Octaves, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            Random prng = Random.CreateFromIndex(terrain.NoiseSettings.Seed);
+            NativeArray<float2> octaveOffsets = new(noiseData.Octaves, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            Random prng = Random.CreateFromIndex(noiseData.Seed);
             
-            float halfExtend = terrain.ChunkQuadsPerLine / 2f;
-            float2 offsetChunk = (float2)chunkCoord * terrain.ChunkQuadsPerLine + halfExtend;
+            float halfExtend = chunk.NumQuadPerLine / 2f;
+            float2 offsetChunk = (float2)chunkCoord * chunk.NumQuadPerLine + halfExtend;
 
-            for (int i = 0; i < terrain.NoiseSettings.Octaves; i++)
+            for (int i = 0; i < noiseData.Octaves; i++)
             {
-                float offsetX = prng.NextFloat(-100000f, 100000f) + terrain.NoiseSettings.Offset.x;
-                float offsetY = prng.NextFloat(-100000f, 100000f) - terrain.NoiseSettings.Offset.y;
+                float offsetX = prng.NextFloat(-100000f, 100000f) + noiseData.Offset.x;
+                float offsetY = prng.NextFloat(-100000f, 100000f) - noiseData.Offset.y;
                 octaveOffsets[i] = float2(offsetX, offsetY) + offsetChunk;
             }
 
             JNoiseMap job = new()
             {
-                MapSizeX = terrain.ChunkVerticesPerLine,
-                Settings = terrain.NoiseSettings,
+                MapSizeX = chunk.NumVerticesPerLine,
+                Settings = noiseData,
                 NoiseMap = noiseMap,
                 Octaves = octaveOffsets
             };
-            JobHandle jh = job.ScheduleParallel(terrain.ChunkVerticesCount, JobWorkerCount - 1, jobHandle);
+            JobHandle jh = job.ScheduleParallel(chunk.VerticesCount, JobWorkerCount - 1, jobHandle);
             return jh;
         }
 

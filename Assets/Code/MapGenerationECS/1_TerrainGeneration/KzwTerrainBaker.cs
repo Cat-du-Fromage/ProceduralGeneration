@@ -26,8 +26,10 @@ namespace KWZTerrainECS
         {
             public override void Bake(KzwTerrainBaker authoring)
             {
+                //if (authoring.TerrainSettings == null) return;
+                Debug.Log("updated");
                 DependsOn(authoring.TerrainSettings);
-                DependsOn(authoring.SpawnSettings);
+                //DependsOn(authoring.SpawnSettings);
                 
                 DynamicBuffer<BufferChunk> chunksBuffer = AddBuffer<BufferChunk>();
                 chunksBuffer.EnsureCapacity(authoring.TerrainSettings.ChunksCount);
@@ -35,7 +37,7 @@ namespace KWZTerrainECS
                 AddComponent<TagUnintitializeTerrain>();
                 AddComponent((DataTerrain)authoring.TerrainSettings);
                 AddComponent((DataChunk)authoring.TerrainSettings.ChunkSettings);
-                
+                AddComponent((DataNoise)authoring.TerrainSettings.NoiseSettings);
                 AddComponent(new PrefabChunk()
                 {
                     Value = GetEntity(authoring.TerrainSettings.ChunkSettings.Prefab)

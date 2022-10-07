@@ -94,7 +94,7 @@ namespace KWZTerrainECS
             meshData.SetIndexBufferParams(triIndicesCount, IndexFormat.UInt16);
 
             NativeArray<float> noiseMap = new (verticesCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            JobHandle noiseJh    = SetNoiseJob(terrain,new int2(x,y), noiseMap);
+            JobHandle noiseJh    = SetNoiseJob(terrain.NoiseSettings, terrain.ChunkSettings,new int2(x,y), noiseMap);
             JobHandle meshJh     = SetMeshJob(terrain.ChunkSettings, meshData, noiseMap, noiseJh);
             JobHandle normalsJh  = SetNormalsJob(terrain.ChunkSettings, meshData, meshJh);
             JobHandle tangentsJh = SetTangentsJob(terrain.ChunkSettings, meshData, normalsJh);

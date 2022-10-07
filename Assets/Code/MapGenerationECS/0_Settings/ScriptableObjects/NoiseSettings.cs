@@ -36,9 +36,9 @@ namespace KWZTerrainECS
         }
 #endif
 
-        public static implicit operator NoiseSettingsData(NoiseSettings data)
+        public static implicit operator DataNoise(NoiseSettings data)
         {
-            return new NoiseSettingsData
+            return new DataNoise
             {
                 Seed = data.Seed,
                 Octaves = data.Octaves,
@@ -49,17 +49,5 @@ namespace KWZTerrainECS
                 Offset = data.Offset
             };
         }
-    }
-    
-    //USE FOR JOB
-    public struct NoiseSettingsData
-    {
-        public uint Seed;
-        public int Octaves;
-        public float Lacunarity;
-        public float Persistence;
-        public float Scale;
-        public float HeightMultiplier;
-        public float2 Offset;
     }
 }

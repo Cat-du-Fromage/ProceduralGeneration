@@ -6,6 +6,8 @@ using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
 using Unity.Mathematics;
+using Unity.Physics;
+using Unity.Physics.Aspects;
 using Unity.Transforms;
 using UnityEngine.Rendering;
 
@@ -18,6 +20,7 @@ using static Unity.Rendering.MaterialMeshInfo;
 
 using static Unity.Collections.Allocator;
 using static Unity.Collections.NativeArrayOptions;
+using Material = UnityEngine.Material;
 
 namespace KWZTerrainECS
 {
@@ -38,22 +41,30 @@ namespace KWZTerrainECS
             DataChunk chunkData = GetComponent<DataChunk>(terrainEntity);
             DataTerrain terrainData = GetComponent<DataTerrain>(terrainEntity);
             int numChunks = cmul(terrainData.NumChunksXY);
-
+            Debug.Log( $"y : {terrainData.NumChunksXY.y}; X: {terrainData.NumChunksXY.x}");
             using NativeArray<float3> positions = GetChunkPositions(chunkData.NumQuadPerLine, terrainData.NumChunksXY);
 
             NativeArray<Entity> chunkArray = new(numChunks, TempJob, UninitializedMemory);
             EntityManager.Instantiate(GetComponent<PrefabChunk>(terrainEntity).Value, chunkArray);
-
-            RenderMesh renderMesh = new RenderMesh();
-            renderMesh.mesh = new Mesh();
+            EntityManager.AddComponent<ColliderAspect>(chunkArray);
+            
+            //Add RenderMesh
+            Material chunkMaterial = EntityManager.GetComponentObject<ObjMaterialTerrain>(terrainEntity).Value;
+            RenderMesh renderMesh = new RenderMesh
+            {
+                material = chunkMaterial,
+                mesh = new Mesh()
+            };
+            
             EntityManager.AddSharedComponentManaged(chunkArray, renderMesh);
             
             for (int i = 0; i < chunkArray.Length; i++)
             {
-                
+                //EntityManager.AddSharedComponentManaged(chunkArray[i], renderMesh);
                 EntityManager.SetName(chunkArray[i], $"Chunk_{i}");
                 SetComponent(chunkArray[i], new Translation(){Value = positions[i]});
-                CreateChunkAt(terrainEntity, chunkArray[i], i, terrainData.NumChunksXY / 2);
+                int2 coord = GetXY2(i, terrainData.NumChunksXY.x) - terrainData.NumChunksXY / 2;
+                CreateChunkAt(terrainEntity, chunkArray[i], i, coord);
             }
 
             chunkArray.Dispose();
@@ -74,49 +85,57 @@ namespace KWZTerrainECS
             return positions;
         }
         
-        private void CreateChunkAt(Entity terrainEntity, Entity chunkEntity, int index, int2 coordOffset)
+        private void CreateChunkAt(Entity terrainEntity, Entity chunkEntity, int index, int2 coord)
         {
             DataChunk chunkData = GetComponent<DataChunk>(terrainEntity);
-            Mesh chunkMesh = BuildMesh(chunkData, coordOffset.x, coordOffset.y);
+            DataNoise noiseData = GetComponent<DataNoise>(terrainEntity);
+            Mesh chunkMesh = BuildMesh(chunkData, noiseData, coord.x, coord.y);
             chunkMesh.name = $"ChunkMesh_{index}";
-
-            Material material = EntityManager.GetComponentObject<ObjMaterialTerrain>(terrainEntity).Value;
-            //RenderMesh renderer = EntityManager.GetSharedComponentManaged<RenderMesh>(chunkEntity);
-            //renderer.material = material;
-            //renderer.mesh = chunkMesh;
-
-            RenderMeshDescription desc = new RenderMeshDescription
-            (
-                shadowCastingMode: ShadowCastingMode.Off,
-                receiveShadows: false
-            );
-
-            Debug.Log($"mesh: {chunkMesh}; Material: {material}");
             
-            RenderMeshArray renderMeshArray = new RenderMeshArray
-            (
-                new Material[] { material },
-                new Mesh[] { chunkMesh }
-            );
-            RenderMeshUtility.AddComponents
-            (
-                chunkEntity,
-                EntityManager, 
-                desc,
-                renderMeshArray,
-                FromRenderMeshArrayIndices(0, 0)
-            );
+            RenderMesh renderer = EntityManager.GetSharedComponentManaged<RenderMesh>(chunkEntity);
+            renderer.mesh = chunkMesh;
+            
+            //PhysicsCollider physicsCollider = new PhysicsCollider { Value = chunkMesh};
+            //EntityManager.GetAspect<ColliderAspect>(chunkArray[i]).Collider
+            
+            EntityManager.SetSharedComponentManaged(chunkEntity, renderer);
+            AssignRenderMesh();
+
+            //Internal Methods
+            //=======================================================================================
+            /*
+            BlobAssetReference<Unity.Physics.Collider> box = Unity.Physics.MeshCollider.Create(new BoxGeometry 
+            {
+                Center = float3.zero,
+                BevelRadius = 0.05f,
+                Orientation = quaternion.identity,
+                Size = new float3(1,1,1)
+            });
+            */
+            void AssignRenderMesh()
+            {
+                RenderMeshDescription desc = new(shadowCastingMode: ShadowCastingMode.Off, receiveShadows: false);
+                RenderMeshArray renderMeshArray = new(new[] { renderer.material }, new[] { chunkMesh });
+                RenderMeshUtility.AddComponents
+                (
+                    chunkEntity,
+                    EntityManager, 
+                    desc,
+                    renderMeshArray,
+                    FromRenderMeshArrayIndices(0, 0)
+                );
+            }
         }
         
-        private Mesh BuildMesh(DataChunk terrainSettings, int x = 0, int y  = 0)
+        private Mesh BuildMesh(DataChunk terrainSettings, DataNoise noiseData, int x = 0, int y  = 0)
         {
-            Mesh terrainMesh = GenerateChunk(terrainSettings, x, y);
+            Mesh terrainMesh = GenerateChunk(terrainSettings, noiseData, x, y);
             terrainMesh.RecalculateBounds();
             return terrainMesh;
         }
         
         //Here : need to construct according to X,Y position of the chunk
-        private Mesh GenerateChunk(DataChunk chunkData, int x = 0, int y  = 0)
+        private Mesh GenerateChunk(DataChunk chunkData, DataNoise noiseData, int x = 0, int y  = 0)
         {
             int triIndicesCount = chunkData.TriangleIndicesCount;
             int verticesCount = chunkData.VerticesCount;
@@ -129,9 +148,9 @@ namespace KWZTerrainECS
             meshData.SetVertexBufferParams(verticesCount, vertexAttributes);
             meshData.SetIndexBufferParams(triIndicesCount, IndexFormat.UInt16);
 
-            NativeArray<float> noiseMap = new (verticesCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            //JobHandle noiseJh    = SetNoiseJob(terrain,new int2(x,y), noiseMap);
-            JobHandle meshJh     = SetMeshJob(chunkData, meshData, noiseMap/*, noiseJh*/);
+            NativeArray<float> noiseMap = new (verticesCount, TempJob, UninitializedMemory);
+            JobHandle noiseJh    = SetNoiseJob(noiseData, chunkData,new int2(x,y), noiseMap);
+            JobHandle meshJh     = SetMeshJob(chunkData, meshData, noiseMap, noiseJh);
             JobHandle normalsJh  = SetNormalsJob(chunkData, meshData, meshJh);
             JobHandle tangentsJh = SetTangentsJob(chunkData, meshData, normalsJh);
             tangentsJh.Complete();
