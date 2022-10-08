@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -12,6 +13,8 @@ namespace KWZTerrainECS
     public static class Utilities
     {
         //GRID UTILITIES
+        
+        [BurstCompile]
         public static (int, int) GetXY(int index, int width)
         {
             int y = index / width;
@@ -19,6 +22,7 @@ namespace KWZTerrainECS
             return (x, y);
         }
         
+        [BurstCompile]
         public static int2 GetXY2(int index, int width)
         {
             int y = index / width;
@@ -35,6 +39,7 @@ namespace KWZTerrainECS
         }
         */
 
+        [BurstCompile]
         public static int GetIndexFromPosition(float2 pointPos, int2 mapXY)
         {
             float2 percents = pointPos / mapXY;
@@ -43,6 +48,7 @@ namespace KWZTerrainECS
             return xy.y * mapXY.x + xy.x;
         }
         
+        [BurstCompile]
         public static int GetIndexFromPositionOffset(float2 pointPos, int2 mapXY)
         {
             float2 offset = (float2)mapXY / 2f;
@@ -52,6 +58,7 @@ namespace KWZTerrainECS
             return xy.y * mapXY.x + xy.x;
         }
         
+        [BurstCompile]
         public static int2 GetCoordFromPositionOffset(float2 pointPos, int2 mapXY)
         {
             float2 offset = (float2)mapXY / 2f;
@@ -104,6 +111,7 @@ namespace KWZTerrainECS
         //==============================================================================================================
         //MATH UTILITIES
         
+        [BurstCompile]
         public static bool approximately(float a, float b)
         {
             const float minValue = 1E-06f;
@@ -115,6 +123,7 @@ namespace KWZTerrainECS
             return abs(ab.y - ab.x) < maxValue1;
         }
         
+        [BurstCompile]
         public static bool approximately(float2 a, float2 b)
         {
             bool componentX = approximately(a.x, b.x);
@@ -122,6 +131,7 @@ namespace KWZTerrainECS
             return all(new bool2(componentX, componentY));
         }
         
+        [BurstCompile]
         public static bool approximately(float3 a, float3 b)
         {
             bool componentX = approximately(a.x, b.x);
@@ -130,7 +140,10 @@ namespace KWZTerrainECS
             return all(new bool3(componentX, componentY, componentZ));
         }
         
+        [BurstCompile]
         public static float cmul(float2 a) => a.x * a.y;
+        
+        [BurstCompile]
         public static int cmul(int2 a) => a.x * a.y;
         
         //==============================================================================================================

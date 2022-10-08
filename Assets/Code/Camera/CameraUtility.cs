@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Mathematics;
 
 using static Unity.Mathematics.math;
@@ -9,6 +10,7 @@ namespace RTTCamera
 {
     internal static class CameraUtility
     {
+        [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float clampAngle(float lfAngle, float lfMin, float lfMax)
         {
@@ -17,6 +19,7 @@ namespace RTTCamera
             return clamp(lfAngle, lfMin, lfMax);
         }
 
+        [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static quaternion RotateFWorld(in quaternion localRotation, float x, float y, float z)
         {
@@ -24,6 +27,7 @@ namespace RTTCamera
             return mul(eulerRot, localRotation);
         }
         
+        [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static quaternion RotateFSelf(in quaternion localRotation, float x, float y, float z)
         {
@@ -130,6 +134,7 @@ namespace RTTCamera
         /// </summary>
         /// <param name="q">An orientation.</param>
         /// <param name="order"></param>
+        [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 ToEulerAngles(this quaternion q, RotationOrder order = RotationOrder.XYZ)
         {
@@ -138,6 +143,7 @@ namespace RTTCamera
         
         // Note: taken from Unity.Animation/Core/MathExtensions.cs, which will be moved to Unity.Mathematics at some point
         //       after that, this should be removed and the Mathematics version should be used
+        [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 toEuler(in quaternion q, RotationOrder order = RotationOrder.Default)
         {
@@ -291,6 +297,7 @@ namespace RTTCamera
             return EulerReorderBack(euler, order);
         }
  
+        [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 EulerReorderBack(in float3 euler, RotationOrder order) =>
         order switch

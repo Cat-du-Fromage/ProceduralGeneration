@@ -335,7 +335,7 @@ namespace KWZTerrainECS
         {
             [ReadOnly] public int MapSizeX;
 
-            [ReadOnly, NativeDisableParallelForRestriction, DeallocateOnJobCompletion]
+            [ReadOnly, NativeDisableParallelForRestriction]
             public NativeArray<float> NoiseMap;
 
             [WriteOnly, NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction]
@@ -397,7 +397,6 @@ namespace KWZTerrainECS
 
                 for (int i = 0; i < Settings.Octaves; i++)
                 {
-
                     float sampleX = (x - halfMapSize + Octaves[i].x);
                     float sampleY = (y - halfMapSize + Octaves[i].y);
                     float2 sampleXY = float2(sampleX, sampleY) / Settings.Scale * frequency;

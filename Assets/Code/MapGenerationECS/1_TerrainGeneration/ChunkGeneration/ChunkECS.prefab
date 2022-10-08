@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 204743691831925270}
   - component: {fileID: 204743691831925269}
   - component: {fileID: 204743691831925268}
-  - component: {fileID: -6458079954385838940}
   - component: {fileID: 7864764253559628419}
   m_Layer: 0
   m_Name: ChunkECS
@@ -85,18 +84,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &-6458079954385838940
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 204743691831925265}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b1a620e2dfef2bb4cb538d7d35349e63, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &7864764253559628419
 MonoBehaviour:
   m_ObjectHideFlags: 0

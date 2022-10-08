@@ -85,7 +85,7 @@
         "com.unity.editorcoroutines": "1.0.0",
         "com.unity.performance.profile-analyzer": "1.1.1",
         "com.unity.test-framework": "1.1.33",
-        "com.unity.testtools.codecoverage": "1.1.1"
+        "com.unity.testtools.codecoverage": "1.2.0"
       }
     },
     "com.unity.ide.rider": {
@@ -317,7 +317,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.testtools.codecoverage": {
-      "version": "1.1.1",
+      "version": "1.2.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {

@@ -44,6 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18df91d4ed2df1e4da4f3336d41472b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <ChunkMaterial>k__BackingField: {fileID: 2100000, guid: 35e2a03bbcc6739409a02bb46883d128,
+    type: 2}
   <TerrainSettings>k__BackingField: {fileID: 11400000, guid: ebf3dc82c2b88b34ba8f7623edbc4307,
     type: 2}
   <SpawnSettings>k__BackingField: {fileID: 11400000, guid: 4c3c5875f2c109240a499d0ce5db6842,

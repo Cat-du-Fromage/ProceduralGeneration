@@ -5,5 +5,5 @@ using UnityEngine;
 
 namespace KWZTerrainECS
 {
-    public struct TagUnintitializeTerrain : IComponentData { }
+    public struct TagUnInitializeTerrain : IComponentData { }
 }
