@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.burst": "1.8.0-pre.2",
     "com.unity.collab-proxy": "1.17.2",
     "com.unity.entities": "1.0.0-exp.8",
     "com.unity.entities.graphics": "1.0.0-exp.8",

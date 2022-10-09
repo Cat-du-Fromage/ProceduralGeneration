@@ -16,7 +16,7 @@ MonoBehaviour:
   Octaves: 4
   Lacunarity: 1.8
   Persistence: 0.5
-  Scale: 32
+  Scale: 64
   HeightMultiplier: 1
   Offset:
     x: 0

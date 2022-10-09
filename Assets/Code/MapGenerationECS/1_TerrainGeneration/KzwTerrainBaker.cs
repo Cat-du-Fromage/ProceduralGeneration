@@ -1,17 +1,6 @@
 using System;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Mathematics;
 using UnityEngine;
 using Unity.Entities;
-using Unity.Entities.Serialization;
-using Unity.Jobs;
-using static Unity.Mathematics.math;
-
-using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
-using static KWZTerrainECS.Utilities;
-using static Unity.Collections.Allocator;
-using static Unity.Collections.NativeArrayOptions;
 
 namespace KWZTerrainECS
 {
@@ -39,8 +28,9 @@ namespace KWZTerrainECS
                 
                 AddTerrainAspect();
                 
-                // Internal Methods
-                // ===================================================================================================
+                // -------------------------------------------------------------------------------------------------------
+                // INTERNAL METHODS
+                // -------------------------------------------------------------------------------------------------------
                 void AddTerrainAspect()
                 {
                     AddComponent((DataTerrain)authoring.TerrainSettings);
