@@ -38,8 +38,6 @@ namespace KWZTerrainECS
                     AddComponent((DataNoise)authoring.TerrainSettings.NoiseSettings);
                 }
             }
-
-            
         }
     }
 }

@@ -30,6 +30,7 @@ namespace KWZTerrainECS
 {
     [RequireMatchingQueriesForUpdate]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
+    //[WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     public partial class TerrainInitializationSystem : SystemBase
     {
         private EntityQuery terrainQuery;
@@ -134,8 +135,8 @@ namespace KWZTerrainECS
             // -------------------------------------------------------------------------------------------------------
             void AssignRendererToChunk(Mesh chunkMesh, Entity chunkEntity)
             {
-                Material material = EntityManager.GetSharedComponentManaged<RenderMeshArray>(chunkEntity).Materials[1];
-
+                //Material material = EntityManager.GetSharedComponentManaged<RenderMeshArray>(chunkEntity).Materials[1];
+                Material material = EntityManager.GetComponentObject<ObjMaterialTerrain>(terrainQuery.GetSingletonEntity()).Value;
                 RenderMeshDescription desc = new(shadowCastingMode: ShadowCastingMode.Off, receiveShadows: false);
                 RenderMeshArray renderMeshArray = new(new[] { material }, new[] { chunkMesh });
                 RenderMeshUtility.AddComponents
