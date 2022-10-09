@@ -30,19 +30,32 @@ namespace KWZTerrainECS
 {
     [RequireMatchingQueriesForUpdate]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    //[WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     public partial class TerrainInitializationSystem : SystemBase
     {
-        private EntityQuery terrainQuery;
+        private EntityQuery UnInitializeTerrainQuery;
+        private Entity terrainEntity;
         
         protected override void OnCreate()
         {
-            terrainQuery = GetEntityQuery(typeof(TagUnInitializeTerrain));
+            UnInitializeTerrainQuery = GetEntityQuery(typeof(TagUnInitializeTerrain));
         }
 
         protected override void OnStartRunning()
         {
-            Entity terrainEntity = terrainQuery.GetSingletonEntity();
+            terrainEntity = UnInitializeTerrainQuery.GetSingletonEntity();
+        }
+
+        protected override void OnUpdate()
+        {
+            StepTerrainGeneration();
+            return;
+        }
+
+        // ==========================================================================================================
+        // STEP 1 : Terrain Generation
+        // ==========================================================================================================
+        private void StepTerrainGeneration()
+        {
             EntityManager.SetName(terrainEntity, "TerrainSingleton");
             
             TerrainAspectStruct terrainStruct = new (EntityManager.GetAspectRO<TerrainAspect>(terrainEntity));
@@ -51,14 +64,14 @@ namespace KWZTerrainECS
             EntityManager.RemoveComponent<TagUnInitializeTerrain>(terrainEntity);
         }
 
-        protected override void OnUpdate() { return; }
-
         private void BuildTerrain(Entity terrainEntity, in TerrainAspectStruct terrainStruct)
         {
             DataTerrain terrainData = terrainStruct.Terrain;
             DataChunk chunkData = terrainStruct.Chunk;
 
             using NativeArray<Entity> chunkArray = CreateChunkEntities(terrainEntity, terrainData.NumChunksXY);
+            EntityManager.AddComponent<TagChunk>(chunkArray);
+            
             RegisterAndNameChunks(terrainEntity, chunkArray);
             SetChunkPosition(chunkArray, chunkData.NumQuadPerLine, terrainData.NumChunksXY);
             
@@ -136,7 +149,7 @@ namespace KWZTerrainECS
             void AssignRendererToChunk(Mesh chunkMesh, Entity chunkEntity)
             {
                 //Material material = EntityManager.GetSharedComponentManaged<RenderMeshArray>(chunkEntity).Materials[1];
-                Material material = EntityManager.GetComponentObject<ObjMaterialTerrain>(terrainQuery.GetSingletonEntity()).Value;
+                Material material = EntityManager.GetComponentObject<ObjMaterialTerrain>(UnInitializeTerrainQuery.GetSingletonEntity()).Value;
                 RenderMeshDescription desc = new(shadowCastingMode: ShadowCastingMode.Off, receiveShadows: false);
                 RenderMeshArray renderMeshArray = new(new[] { material }, new[] { chunkMesh });
                 RenderMeshUtility.AddComponents
@@ -303,5 +316,9 @@ namespace KWZTerrainECS
                 return job.ScheduleParallel(positions.Length, JobWorkerCount - 1, dependency);
             }
         }
+        
+        // ==========================================================================================================
+        // STEP 2 : GridSystem
+        // ==========================================================================================================
     }
 }

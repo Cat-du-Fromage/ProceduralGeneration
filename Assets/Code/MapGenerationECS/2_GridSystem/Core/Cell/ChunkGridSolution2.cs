@@ -73,11 +73,6 @@ namespace KWZTerrainECS
             }
         }
 
-        private void Test()
-        {
-            
-        }
-        
     }
     
     public static class ChunkGridSolution2
@@ -98,43 +93,7 @@ namespace KWZTerrainECS
             };
             job.ScheduleParallel(numChunks, JobWorkerCount - 1, default).Complete();
             buffer.CopyFrom(gates.Reinterpret<ChunkNodeGrid>());
-            //buffer.Reinterpret<ChunkNodeGrid>();
             gates.Dispose();
-            /*
-            for (int i = 0; i < numChunks; i++)
-            {
-                for (int j = 0; j < 4; j++)
-                {
-                    gates.GetGateWays(i, (Sides)j, chunkSize, numChunksXY);
-                }
-                buffer.AddRange(gates.Reinterpret<ChunkNodeGrid>());
-            }
-            */
         }
-        /*
-        //WRONG use for build
-        public static NativeArray<GateWay> GetGateWays(this NativeArray<GateWay> gates, int chunkIndex, Sides side, int chunkSize, int2 numChunksXY)
-        {
-            //NativeArray<GateWay> gates = new (chunkSize, Allocator.Temp);
-            int2 terrainSize = numChunksXY * chunkSize;
-            
-            int2 chunkCoord = GetXY2(chunkIndex, numChunksXY.x);
-            int2 offsetChunk = chunkSize * chunkCoord;
-            
-            bool2 isYOffset = new(side == Top, side == Bottom);
-            bool2 isXOffset = new(side == Left, side == Right);
-            for (int i = 0; i < chunkSize; i++)
-            {
-                int2 gateCoord = GetXY2(i, chunkSize) + offsetChunk;
-                int offsetY = select( select(1,-1,isYOffset.y), 0,!any(isYOffset) );
-                int offsetX = select( select(1,-1,isXOffset.x), 0,!any(isXOffset) );
-                    
-                int gateIndex = gateCoord.y * terrainSize.x + gateCoord.x;
-                int adjGateIndex = (gateCoord.y + offsetY) * terrainSize.x + (gateCoord.x + offsetX);
-                gates[i] = new GateWay(gateIndex, adjGateIndex);
-            }
-            return gates;
-        }
-        */
     }
 }

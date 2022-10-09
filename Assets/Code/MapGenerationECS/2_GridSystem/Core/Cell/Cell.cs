@@ -16,33 +16,28 @@ namespace KWZTerrainECS
         public float3 Center;
         public FixedList64Bytes<float3> Vertices;
 
-        public Cell(TerrainSettings settings, int x, int y, NativeArray<float3> cellVertex)
+        public unsafe Cell(int2 terrainNumQuadsXY, int x, int y, NativeArray<float3> cellVertex)
         {
-            //Debug.Log($"size: {UnsafeUtility.SizeOf(typeof(ChunkGrid))}; NodeChunk: {UnsafeUtility.SizeOf(typeof(NodeChunk))}");
             Coord = new int2(x, y);
             Vertices = new FixedList64Bytes<float3>();
             //for (int i = 0; i < cellVertex.Length; i++) Vertices.Add(cellVertex[i]);
-            unsafe {Vertices.AddRange(cellVertex.GetUnsafeReadOnlyPtr(),cellVertex.Length);}
-            int cellIndex = y * settings.NumQuadX + x;
-            float2 coord2D =GetXY2(cellIndex, settings.NumQuadX) - (float2)settings.NumQuadsXY / 2f + float2(0.5f);
+            Vertices.AddRange(cellVertex.GetUnsafeReadOnlyPtr(), cellVertex.Length);
+            float2 coord2D =Coord - (float2)terrainNumQuadsXY / 2f + float2(0.5f);
             float height = (cellVertex[1] + normalize(cellVertex[2] - cellVertex[1]) * (SQRT2/2)).y;
             Center = new float3(coord2D.x, height, coord2D.y);
         }
         
-        public Cell(TerrainSettings settings, int2 coord, NativeArray<float3> cellVertex)
+        public unsafe Cell(int2 terrainNumQuadsXY, int2 coord, NativeArray<float3> cellVertex)
         {
             Coord = coord;
             Vertices = new FixedList64Bytes<float3>();
-            
             //for (int i = 0; i < cellVertex.Length; i++) Vertices.Add(cellVertex[i]);
-            unsafe { Vertices.AddRange(cellVertex.GetUnsafeReadOnlyPtr(), cellVertex.Length);}
-
-            int cellIndex = coord.y * settings.NumQuadX + coord.x;
-            float2 coord2D =GetXY2(cellIndex, settings.NumQuadX) - (float2)settings.NumQuadsXY / 2f + float2(0.5f);
+            Vertices.AddRange(cellVertex.GetUnsafeReadOnlyPtr(), cellVertex.Length);
+            float2 coord2D =coord - (float2)terrainNumQuadsXY / 2f + float2(0.5f);
             float height = (cellVertex[1] + normalize(cellVertex[2] - cellVertex[1]) * (SQRT2/2)).y;
             Center = new float3(coord2D.x, height, coord2D.y);
         }
-
+        
         public float HighestPoint => ceil(cmax(float4(Vertices[0].y, Vertices[1].y, Vertices[2].y, Vertices[3].y)));
 
         public float3 NormalTriangleLeft => normalizesafe(cross(Vertices[2] - Vertices[0], Vertices[1] - Vertices[0]));
