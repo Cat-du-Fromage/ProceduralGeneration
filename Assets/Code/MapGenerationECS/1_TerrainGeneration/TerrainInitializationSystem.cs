@@ -59,20 +59,20 @@ namespace KWZTerrainECS
             EntityManager.SetName(terrainEntity, "TerrainSingleton");
             
             TerrainAspectStruct terrainStruct = new (EntityManager.GetAspectRO<TerrainAspect>(terrainEntity));
-            BuildTerrain(terrainEntity, terrainStruct);
+            BuildTerrain(terrainStruct);
             
             EntityManager.RemoveComponent<TagUnInitializeTerrain>(terrainEntity);
         }
 
-        private void BuildTerrain(Entity terrainEntity, in TerrainAspectStruct terrainStruct)
+        private void BuildTerrain(in TerrainAspectStruct terrainStruct)
         {
             DataTerrain terrainData = terrainStruct.Terrain;
             DataChunk chunkData = terrainStruct.Chunk;
 
-            using NativeArray<Entity> chunkArray = CreateChunkEntities(terrainEntity, terrainData.NumChunksXY);
+            using NativeArray<Entity> chunkArray = CreateChunkEntities(terrainData.NumChunksXY);
             EntityManager.AddComponent<TagChunk>(chunkArray);
             
-            RegisterAndNameChunks(terrainEntity, chunkArray);
+            RegisterAndNameChunks(chunkArray);
             SetChunkPosition(chunkArray, chunkData.NumQuadPerLine, terrainData.NumChunksXY);
             
             Mesh[] chunkMeshes = GenerateChunksMeshes(terrainStruct);
@@ -86,7 +86,7 @@ namespace KWZTerrainECS
         /// <param name="terrainEntity"></param>
         /// <param name="numChunkXY"></param>
         /// <returns></returns>
-        private NativeArray<Entity> CreateChunkEntities(Entity terrainEntity, int2 numChunkXY)
+        private NativeArray<Entity> CreateChunkEntities(int2 numChunkXY)
         {
             Entity chunkPrefab = GetComponent<PrefabChunk>(terrainEntity).Value;
             NativeArray<Entity> chunks = EntityManager.Instantiate(chunkPrefab, cmul(numChunkXY), TempJob);
@@ -98,7 +98,7 @@ namespace KWZTerrainECS
         /// </summary>
         /// <param name="terrainEntity"></param>
         /// <param name="chunkEntities"></param>
-        private void RegisterAndNameChunks(Entity terrainEntity, NativeArray<Entity> chunkEntities)
+        private void RegisterAndNameChunks(NativeArray<Entity> chunkEntities)
         {
             DynamicBuffer<BufferChunk> chunksBuffer = GetBuffer<BufferChunk>(terrainEntity);
             for (int i = 0; i < chunkEntities.Length; i++)

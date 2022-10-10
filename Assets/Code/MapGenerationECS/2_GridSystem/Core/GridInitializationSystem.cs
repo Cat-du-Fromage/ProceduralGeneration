@@ -48,8 +48,6 @@ namespace KWZTerrainECS
         {
             Entity terrain = GetSingletonEntity<TagTerrain>();
             
-            //TEST
-
             TerrainAspectStruct terrainStruct = new (EntityManager.GetAspectRO<TerrainAspect>(terrain));
             GenerateGridTerrain(terrain, terrainStruct);
             EntityManager.RemoveComponent<TagUnInitializeGrid>(terrain);

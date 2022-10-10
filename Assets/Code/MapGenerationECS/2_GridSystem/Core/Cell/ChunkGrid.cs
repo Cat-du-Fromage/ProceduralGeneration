@@ -73,15 +73,6 @@ namespace KWZTerrainECS
     
     
     //==========================================================
-
-    public enum Sides : int
-    {
-        Top    = 0,
-        Right  = 1,
-        Bottom = 2,
-        Left   = 3
-    }
-    
     public struct ChunkNodesBlobAsset : IComponentData
     {
         public FixedList4096Bytes<ChunkNode> Blob;
@@ -89,8 +80,6 @@ namespace KWZTerrainECS
         public static void Build(int index, int2 numChunksXY, int chunkSize)
         {
             int2 chunkCoord = GetXY2(index, numChunksXY.x);
-            
-            
             int numSide = 4;
             numSide -= select(0, 1, chunkCoord.y == 0 || chunkCoord.y == numChunksXY.y - 1);
             numSide -= select(0, 1, chunkCoord.x == 0 || chunkCoord.x == numChunksXY.x - 1);
@@ -120,26 +109,7 @@ namespace KWZTerrainECS
         public FixedList128Bytes<GateWay> LeftGates;
     }
     
-    public readonly struct GateWay
-    {
-        public readonly int ChunkIndex;
-        public readonly Sides Side;
-        public readonly int Index;
-        public readonly int IndexAdjacent;
-        
-        public GateWay(int chunkIndex, Sides side, int index = -1, int indexAdj = -1)
-        {
-            ChunkIndex = chunkIndex;
-            Side = side;
-            Index = index;
-            IndexAdjacent = indexAdj;
-        }
-
-        public override string ToString()
-        {
-            return $"Gate in chunk : {Index}; adjacent: {IndexAdjacent}";
-        }
-    }
+    
 }
 /*
     public struct ChunkNodesPool : IComponentData

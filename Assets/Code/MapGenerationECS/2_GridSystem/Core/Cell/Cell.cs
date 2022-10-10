@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -54,13 +55,12 @@ namespace KWZTerrainECS
     
     public static class TriangleProofOfConcept
     {
-        public static float3 Get3DTranslatedPosition(this ref GridCells cells, float2 position2D, int2 mapSizeXY)
+        public static float3 Get3DTranslatedPosition(this ref GridCells cells, in float2 position2D, in int2 mapSizeXY)
         {
             int cellIndex = GetIndexFromPositionOffset(position2D, mapSizeXY);
             Cell cell = cells.Cells[cellIndex];
 
             bool isLeftTri = IsPointInTriangle(cell.LeftTriangle, position2D);
-            //bool isRightTri = IsPointInTriangle(cell.RightTriangle, position2D);
 
             //Ray origin
             float3 rayOrigin = new float3(position2D.x, cell.HighestPoint, position2D.y);
@@ -72,7 +72,7 @@ namespace KWZTerrainECS
             return mad(t,down(), rayOrigin);
         }
         
-        public static bool IsPointInTriangle(NativeSlice<float3> triangle, float2 position2D)
+        public static bool IsPointInTriangle(NativeSlice<float3> triangle, in float2 position2D)
         {
             float2 triA = triangle[0].xz;
             float2 triB = triangle[1].xz;
@@ -90,7 +90,10 @@ namespace KWZTerrainECS
 
             float w1 = (a.x * s1 + s4 * s2 - position2D.x * s1) / (s3 * s2 - (b.x - a.x) * s1);
             float w2 = (s4 - w1 * s3) / s1;
-            return w1 >= 0 && w2 >= 0 && (w1 + w2) <= 1;
+            
+            bool3 isInTriangle = new (w1 >= 0, w2 >= 0, (w1 + w2) <= 1);
+            return all(isInTriangle);
+            //return w1 >= 0 && w2 >= 0 && (w1 + w2) <= 1;
         }
     }
 }

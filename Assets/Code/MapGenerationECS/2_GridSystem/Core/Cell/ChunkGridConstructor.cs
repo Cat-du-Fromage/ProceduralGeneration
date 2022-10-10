@@ -16,7 +16,29 @@ using int2 = Unity.Mathematics.int2;
 
 namespace KWZTerrainECS
 {
-    //[BurstCompile]
+    public static class ChunkGridConstructor
+    {
+        public static void BuildGrid(this DynamicBuffer<ChunkNodeGrid> buffer, int chunkSize, int2 numChunksXY)
+        {
+            int numChunks = cmul(numChunksXY);
+            int bufferCapacity = (chunkSize * 4) * numChunks;
+            buffer.EnsureCapacity(bufferCapacity);
+
+            NativeArray<GateWay> gates = new (bufferCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+            JConstructGrid job = new JConstructGrid
+            {
+                ChunkQuadPerLine = chunkSize,
+                NumChunksXY = numChunksXY,
+                GateWays = gates
+            };
+            job.ScheduleParallel(numChunks, JobWorkerCount - 1, default).Complete();
+            buffer.CopyFrom(gates.Reinterpret<ChunkNodeGrid>());
+            gates.Dispose();
+        }
+    }
+    
+    [BurstCompile(CompileSynchronously = false)]
     public struct JConstructGrid : IJobFor
     {
         [ReadOnly] public int ChunkQuadPerLine;
@@ -66,6 +88,7 @@ namespace KWZTerrainECS
 
                     int offsetChunkIndex = chunkIndex * ChunkQuadPerLine * 4;
                     int indexOffset = offsetChunkIndex + (i * ChunkQuadPerLine + j);
+                    
                     GateWays[indexOffset] = any(isOutLimit) 
                         ? new GateWay(chunkIndex, side) 
                         : new GateWay(chunkIndex, side,gateIndex, adjGateIndex);
@@ -73,27 +96,5 @@ namespace KWZTerrainECS
             }
         }
 
-    }
-    
-    public static class ChunkGridSolution2
-    {
-        public static void BuildGrid(this DynamicBuffer<ChunkNodeGrid> buffer, int chunkSize, int2 numChunksXY)
-        {
-            int numChunks = cmul(numChunksXY);
-            int bufferCapacity = (chunkSize * 4) * numChunks;
-            buffer.EnsureCapacity(bufferCapacity);
-
-            NativeArray<GateWay> gates = new (bufferCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
-            JConstructGrid job = new JConstructGrid
-            {
-                ChunkQuadPerLine = chunkSize,
-                NumChunksXY = numChunksXY,
-                GateWays = gates
-            };
-            job.ScheduleParallel(numChunks, JobWorkerCount - 1, default).Complete();
-            buffer.CopyFrom(gates.Reinterpret<ChunkNodeGrid>());
-            gates.Dispose();
-        }
     }
 }
