@@ -21,7 +21,7 @@ namespace KWZTerrainECS
                 
                 DynamicBuffer<BufferChunk> chunksBuffer = AddBuffer<BufferChunk>();
                 chunksBuffer.EnsureCapacity(authoring.TerrainSettings.ChunksCount);
-
+                
                 AddComponent<TagTerrain>();
                 AddComponent<TagUnInitializeTerrain>();
                 AddComponent(new PrefabChunk() { Value = GetEntity(authoring.TerrainSettings.ChunkSettings.Prefab) });

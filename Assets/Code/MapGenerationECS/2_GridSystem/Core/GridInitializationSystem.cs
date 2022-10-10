@@ -47,6 +47,9 @@ namespace KWZTerrainECS
         protected override void OnUpdate()
         {
             Entity terrain = GetSingletonEntity<TagTerrain>();
+            
+            //TEST
+
             TerrainAspectStruct terrainStruct = new (EntityManager.GetAspectRO<TerrainAspect>(terrain));
             GenerateGridTerrain(terrain, terrainStruct);
             EntityManager.RemoveComponent<TagUnInitializeGrid>(terrain);
@@ -127,9 +130,9 @@ namespace KWZTerrainECS
             int numChunkVertices = terrainStruct.Chunk.NumVerticesPerLine * terrainStruct.Chunk.NumVerticesPerLine;
             
             NativeArray<float3> verticesNtv = new(numTerrainVertices, TempJob, UninitializedMemory);
-            NativeArray<float3> chunkPositions = chunksQuery.ToComponentDataArray<Translation>(TempJob).Reinterpret<float3>();
-            //NativeArray<float3> chunkPosition = GetChunkPosition(chunkEntities.Length);
-            
+            NativeArray<float3> chunkPositions = 
+                chunksQuery.ToComponentDataArray<Translation>(TempJob).Reinterpret<float3>();
+
             NativeArray<JobHandle> jobHandles = new(chunkEntities.Length, Temp, UninitializedMemory);
             for (int chunkIndex = 0; chunkIndex < chunkEntities.Length; chunkIndex++)
             {
@@ -149,27 +152,11 @@ namespace KWZTerrainECS
             JobHandle.CompleteAll(jobHandles);
             chunkPositions.Dispose();
             return verticesNtv;
-            /*
-            // --------------------------------------------------------------------------------------------------------
-            // INNER METHODS : GET CHUNK POSITIONS
-            // --------------------------------------------------------------------------------------------------------
-            NativeArray<float3> GetChunkPosition(int length)
-            {
-                ComponentLookup<Translation> translations = SystemAPI.GetComponentLookup<Translation>(true);
-                chunksQuery.ToComponentDataArray<Translation>(TempJob);
-                NativeArray<float3> positions = new(length, TempJob, UninitializedMemory);
-                for (int i = 0; i < chunkEntities.Length; i++)
-                {
-                    Entity chunk = chunkEntities[i];
-                    positions[i] = translations[chunk].Value;
-                }
-                return positions;
-            }
-            */
         }
-
-
-        [BurstCompile]
+        
+        
+        
+        [BurstCompile(CompileSynchronously = false)]
         private struct JReorderMeshVertices : IJobFor
         {
             [ReadOnly] public int ChunkIndex;
@@ -202,26 +189,8 @@ namespace KWZTerrainECS
                 OrderedVertices[fullMapIndex] = ChunkPositions[ChunkIndex] + MeshVertices[index];
             }
         }
-        /*
-        public NativeArray<int> GetQuadsIndexOrderedByChunk(in TerrainAspectStruct terrainStruct)
-        {
-            int terrainNumQuads = cmul(terrainStruct.Terrain.NumQuadsXY);
-            NativeArray<int> nativeOrderedIndices = new (terrainNumQuads, TempJob, UninitializedMemory);
-
-            JOrderArrayIndexByChunkIndex job = new()
-            {
-                CellSize = 1,
-                ChunkSize = terrainStruct.Chunk.NumQuadPerLine,
-                NumCellX = terrainStruct.Terrain.NumQuadsXY.x,
-                NumChunkX = terrainStruct.Terrain.NumChunksXY.x,
-                SortedArray = nativeOrderedIndices
-            };
-            JobHandle jobHandle = job.ScheduleParallel(terrainNumQuads, JobWorkerCount - 1, default);
-            jobHandle.Complete();
-            return nativeOrderedIndices;
-        }
-        */
-        [BurstCompile(CompileSynchronously = true)]
+        
+        [BurstCompile(CompileSynchronously = false)]
         private struct JOrderArrayIndexByChunkIndex : IJobFor
         {
             [ReadOnly] public int CellSize;
