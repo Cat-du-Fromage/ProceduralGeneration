@@ -12,7 +12,6 @@ using Unity.Transforms;
 using UnityEngine;
 
 using static Unity.Entities.ComponentType;
-
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
 using static UnityEngine.Mesh;

@@ -48,7 +48,6 @@ namespace KWZTerrainECS
         protected override void OnUpdate()
         {
             StepTerrainGeneration();
-            return;
         }
 
         // ==========================================================================================================
