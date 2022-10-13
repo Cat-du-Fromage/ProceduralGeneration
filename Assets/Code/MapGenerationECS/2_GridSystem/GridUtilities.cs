@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -51,5 +52,34 @@ namespace KWZTerrainECS
             (int)AdjacentCell.BottomRight when pos.y > 0 && pos.x < width - 1         => (index - width) + 1,
             _ => -1,
         };
+
+        public static NativeArray<Cell> GetCellsAtChunk(ref this GridCells gridCells, int chunkIndex, Allocator allocator = Allocator.TempJob)
+        {
+            //store value from blob
+            int chunkQuadsPerLine = gridCells.ChunkSize;
+            int mapNumChunkX = gridCells.NumChunkX;
+            
+            int mapNumQuadsX = mapNumChunkX * chunkQuadsPerLine;
+            int numCells = chunkQuadsPerLine * chunkQuadsPerLine;
+            
+            NativeArray<Cell> chunkCells = new(numCells, allocator, NativeArrayOptions.UninitializedMemory);
+
+            int2 chunkCoord = Utilities.GetXY2(chunkIndex, mapNumChunkX);
+            
+            for (int i = 0; i < chunkQuadsPerLine; i++)
+            {
+                int2 offsetCoord = chunkQuadsPerLine * chunkCoord;
+                //int startX = chunkQuadsPerLine * chunkCoord.x;
+                //int startY = chunkQuadsPerLine * chunkCoord.y;
+                int startIndex = offsetCoord.y * mapNumQuadsX + offsetCoord.x;
+                for (int j = 0; j < chunkQuadsPerLine; j++)
+                {
+                    int index = i * chunkQuadsPerLine + j;
+                    chunkCells[index] = gridCells.Cells[startIndex + j];
+                }
+            }
+            
+            return chunkCells;
+        }
     }
 }

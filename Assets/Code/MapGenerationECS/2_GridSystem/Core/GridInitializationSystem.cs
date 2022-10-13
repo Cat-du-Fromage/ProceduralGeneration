@@ -85,6 +85,9 @@ namespace KWZTerrainECS
             BlobBuilder builder = new BlobBuilder(Allocator.Temp);
             
             ref GridCells gridCells = ref builder.ConstructRoot<GridCells>();
+            gridCells.ChunkSize = terrainStruct.Chunk.NumQuadPerLine;
+            gridCells.NumChunkX = terrainStruct.Terrain.NumChunksXY.x;
+            
             BlobBuilderArray<Cell> arrayBuilder = ConstructGridArray(ref gridCells, terrainStruct);
             
             BlobAssetReference<GridCells> result = builder.CreateBlobAssetReference<GridCells>(Persistent);
@@ -92,7 +95,7 @@ namespace KWZTerrainECS
             return result; 
             
             // -------------------------------------------------------------------------------------------------------
-            // INNER METHODS : GET CHUNK POSITIONS
+            // INNER METHODS : Construct Grid nodes, Nodes are not ordered by chunk!
             // -------------------------------------------------------------------------------------------------------
             BlobBuilderArray<Cell> ConstructGridArray(ref GridCells gridCells, in TerrainAspectStruct terrainStruct)
             {

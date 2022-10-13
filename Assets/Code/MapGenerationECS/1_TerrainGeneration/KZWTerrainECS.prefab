@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8678940358428973494}
   - component: {fileID: 7149044114094174323}
   - component: {fileID: 1896333091536433443}
+  - component: {fileID: 1841698281}
   m_Layer: 0
   m_Name: KZWTerrainECS
   m_TagString: Untagged
@@ -61,3 +62,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6ffc7d0f8048a4438046bf056edac74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1841698281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8678940358428973448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b3e733e5f394d749ab4593ec3f5fa85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UnitPrefab: {fileID: 4745858458928097138, guid: 7c4525d5a46da0b47bbbdfd14c376381,
+    type: 3}
