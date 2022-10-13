@@ -56,7 +56,10 @@ namespace KWZTerrainECS
 
             for (int i = 0; i < units.Length; i++)
             {
-                SetComponent(units[i], new Translation(){Value = spawnCells[i].Center});
+                Entity unit = units[i];
+                EntityManager.SetName(unit, $"UnitTest_{i}");
+                SetComponent(unit, new Translation(){Value = spawnCells[i].Center});
+                
             }
             EntityManager.AddComponent<TagUnit>(units);
         }

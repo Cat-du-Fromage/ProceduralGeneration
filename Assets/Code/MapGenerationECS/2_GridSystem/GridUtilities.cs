@@ -52,7 +52,8 @@ namespace KWZTerrainECS
             (int)AdjacentCell.BottomRight when pos.y > 0 && pos.x < width - 1         => (index - width) + 1,
             _ => -1,
         };
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NativeArray<Cell> GetCellsAtChunk(ref this GridCells gridCells, int chunkIndex, Allocator allocator = Allocator.TempJob)
         {
             //store value from blob
@@ -65,21 +66,26 @@ namespace KWZTerrainECS
             NativeArray<Cell> chunkCells = new(numCells, allocator, NativeArrayOptions.UninitializedMemory);
 
             int2 chunkCoord = Utilities.GetXY2(chunkIndex, mapNumChunkX);
-            
-            for (int i = 0; i < chunkQuadsPerLine; i++)
+
+            for (int i = 0; i < numCells; i++)
             {
-                int2 offsetCoord = chunkQuadsPerLine * chunkCoord;
-                //int startX = chunkQuadsPerLine * chunkCoord.x;
-                //int startY = chunkQuadsPerLine * chunkCoord.y;
-                int startIndex = offsetCoord.y * mapNumQuadsX + offsetCoord.x;
-                for (int j = 0; j < chunkQuadsPerLine; j++)
-                {
-                    int index = i * chunkQuadsPerLine + j;
-                    chunkCells[index] = gridCells.Cells[startIndex + j];
-                }
+                
+                int2 cellCoordInChunk = Utilities.GetXY2(i, chunkQuadsPerLine);
+                int2 cellGridCoord = chunkCoord * chunkQuadsPerLine + cellCoordInChunk;
+                int index = cellGridCoord.y * mapNumQuadsX + cellGridCoord.x;
+                
+                chunkCells[i] = gridCells.Cells[index];
             }
             
             return chunkCells;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetGridCellIndexFromChunkCellIndex(int chunkSizeX,int mapSizeX, int cellIndexInsideChunk, int2 chunkCoord)
+        {
+            int2 cellCoordInChunk = Utilities.GetXY2(cellIndexInsideChunk, chunkSizeX);
+            int2 cellGridCoord = chunkCoord * chunkSizeX + cellCoordInChunk;
+            return (cellGridCoord.y * mapSizeX) + cellGridCoord.x;
         }
     }
 }

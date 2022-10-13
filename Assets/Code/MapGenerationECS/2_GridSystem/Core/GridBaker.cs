@@ -11,9 +11,6 @@ namespace KWZTerrainECS
         {
             public override void Bake(GridBaker authoring)
             {
-                //TEST//
-                //AddBuffer<TestFixedList>().EnsureCapacity(16);
-
                 AddComponent<TagUnInitializeGrid>();
             }
         }
