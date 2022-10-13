@@ -48,21 +48,62 @@ namespace KWZTerrainECS
             Entity terrain = GetSingletonEntity<TagTerrain>();
             
             TerrainAspectStruct terrainStruct = new (EntityManager.GetAspectRO<TerrainAspect>(terrain));
-            GenerateGridTerrain(terrain, terrainStruct);
+            ref BlobArray<Cell> cells = ref GenerateGridTerrain(terrain, terrainStruct);
             EntityManager.RemoveComponent<TagUnInitializeGrid>(terrain);
+            
+            #if UNITY_EDITOR
+            //Test2(ref cells);
+            #endif
+
+        }
+#if UNITY_EDITOR
+        private void Test(NativeArray<float3> verticesNtv)
+        {
+            Entity terrain = GetSingletonEntity<TagTerrain>();
+            NativeArray<Entity> gridCheck = new(verticesNtv.Length, Temp, UninitializedMemory);
+            Entity prefabDebug = GetComponent<PrefabDebugGridSphere>(terrain).Prefab;
+            EntityManager.Instantiate(prefabDebug, gridCheck);
+            
+            for (int j = 0; j < verticesNtv.Length; j++)
+            {
+                Entity sphereDebug = gridCheck[j];
+                EntityManager.SetName(sphereDebug, $"cell_{j}");
+                SetComponent(sphereDebug, new Translation(){Value = verticesNtv[j]});
+            }
         }
 
-        private void GenerateGridTerrain(Entity terrainEntity, in TerrainAspectStruct terrainStruct)
+        private void Test2(ref BlobArray<Cell> cells)
         {
-            using NativeArray<Entity> chunkEntities = chunksQuery.ToEntityArray(TempJob);
-            using MeshDataArray meshDataArray = GetChunksMeshDataArray(chunkEntities);
+            Entity terrain = GetSingletonEntity<TagTerrain>();
+            NativeArray<Entity> gridCheck = new(cells.Length*4, Temp, UninitializedMemory);
+            Entity prefabDebug = GetComponent<PrefabDebugGridSphere>(terrain).Prefab;
+            EntityManager.Instantiate(prefabDebug, gridCheck);
+            int index = 0;
+            for (int i = 0; i < cells.Length; i++)
+            {
+                Cell cell = cells[i];
+                for (int j = 0; j < cell.Vertices.Length; j++)
+                {
+                    Entity sphereDebug = gridCheck[index];
+                    EntityManager.SetName(sphereDebug, $"cell_{i}_{j}");
+                    SetComponent(sphereDebug, new Translation(){Value = cell.Vertices[j]});
+                    index += 1;
+                }
+            }
+        }
+#endif
+        private ref BlobArray<Cell> GenerateGridTerrain(Entity terrainEntity, in TerrainAspectStruct terrainStruct)
+        {
+            //using NativeArray<Entity> chunkEntities = chunksQuery.ToEntityArray(TempJob);
+            DynamicBuffer<Entity> chunkEntities = EntityManager.GetBuffer<BufferChunk>(terrainEntity).Reinterpret<Entity>();
+            using MeshDataArray meshDataArray = GetChunksMeshDataArray(chunkEntities.AsNativeArray());
             
-            BlobAssetReference<GridCells> blob = CreateGridCells(meshDataArray, terrainStruct, chunkEntities);
+            BlobAssetReference<GridCells> blob = CreateGridCells(meshDataArray, terrainStruct, chunkEntities.AsNativeArray());
             EntityManager.AddComponentData(terrainEntity, new BlobCells() { Blob = blob });
 
             DynamicBuffer<ChunkNodeGrid> buffer = EntityManager.AddBuffer<ChunkNodeGrid>(terrainEntity);
             buffer.BuildGrid(terrainStruct.Chunk.NumQuadPerLine, terrainStruct.Terrain.NumChunksXY);
-            
+            return ref blob.Value.Cells;
             // -------------------------------------------------------------------------------------------------------
             // internal methods
             // -------------------------------------------------------------------------------------------------------
@@ -75,6 +116,7 @@ namespace KWZTerrainECS
                 }
                 return AcquireReadOnlyMeshData(meshes);
             }
+            
         }
         
         private BlobAssetReference<GridCells> CreateGridCells(
@@ -82,7 +124,7 @@ namespace KWZTerrainECS
             in TerrainAspectStruct terrainStruct,
             NativeArray<Entity> chunkEntities)
         {
-            BlobBuilder builder = new BlobBuilder(Allocator.Temp);
+            BlobBuilder builder = new BlobBuilder(Temp);
             
             ref GridCells gridCells = ref builder.ConstructRoot<GridCells>();
             gridCells.ChunkSize = terrainStruct.Chunk.NumQuadPerLine;
@@ -104,7 +146,6 @@ namespace KWZTerrainECS
                 
                 BlobBuilderArray<Cell> arrayBuilder = builder.Allocate(ref gridCells.Cells, cmul(terrainQuadsXY));
                 using NativeArray<float3> verticesNtv = GetOrderedVertices(chunkEntities, meshDataArray, terrainStruct);
-                
                 NativeArray<float3> cellVertices = new (4, Temp, UninitializedMemory);
                 for (int cellIndex = 0; cellIndex < arrayBuilder.Length; cellIndex++)
                 {
@@ -126,18 +167,17 @@ namespace KWZTerrainECS
             MeshDataArray meshDataArray, 
             in TerrainAspectStruct terrainStruct)
         {
-            int numTerrainVertices = cmul(terrainStruct.Terrain.NumVerticesXY);
+            int numTerrainVertices = cmul(terrainStruct.Terrain.NumVerticesXY);// terrainStruct.Terrain.NumVerticesXY.x * terrainStruct.Terrain.NumVerticesXY.y;
             int numChunkVertices = terrainStruct.Chunk.NumVerticesPerLine * terrainStruct.Chunk.NumVerticesPerLine;
             
             NativeArray<float3> verticesNtv = new(numTerrainVertices, TempJob, UninitializedMemory);
-            NativeArray<float3> chunkPositions = 
-                chunksQuery.ToComponentDataArray<Translation>(TempJob).Reinterpret<float3>();
-
+            NativeArray<float3> chunkPositions = GetChunkPosition();
             NativeArray<JobHandle> jobHandles = new(chunkEntities.Length, Temp, UninitializedMemory);
+
             for (int chunkIndex = 0; chunkIndex < chunkEntities.Length; chunkIndex++)
             {
                 int2 chunkCoord = GetXY2(chunkIndex, terrainStruct.Terrain.NumChunksXY.x);
-                
+
                 jobHandles[chunkIndex] = new JReorderMeshVertices()
                 {
                     ChunkIndex = chunkIndex,
@@ -151,11 +191,20 @@ namespace KWZTerrainECS
             }
             JobHandle.CompleteAll(jobHandles);
             chunkPositions.Dispose();
+            //Test(verticesNtv);
             return verticesNtv;
+            
+            // INNER METHODS : GET CHUNK POSITIONS
+            //==========================================================================================================
+            NativeArray<float3> GetChunkPosition()
+            {
+                NativeArray<float3> positions = new(chunkEntities.Length, TempJob, UninitializedMemory);
+                for (int i = 0; i < chunkEntities.Length; i++)
+                    positions[i] = GetComponent<Translation>(chunkEntities[i]).Value;
+                return positions;
+            }
         }
-        
-        
-        
+
         [BurstCompile(CompileSynchronously = false)]
         private struct JReorderMeshVertices : IJobFor
         {
@@ -182,10 +231,9 @@ namespace KWZTerrainECS
 
                 int chunkNumQuadPerLine = ChunkNumVertexPerLine - 1;
                 int2 offset = ChunkCoord * chunkNumQuadPerLine;
-            
                 int2 fullTerrainCoord = cellCoord + offset;
-            
                 int fullMapIndex = fullTerrainCoord.y * TerrainNumVertexPerLine + fullTerrainCoord.x;
+                
                 OrderedVertices[fullMapIndex] = ChunkPositions[ChunkIndex] + MeshVertices[index];
             }
         }

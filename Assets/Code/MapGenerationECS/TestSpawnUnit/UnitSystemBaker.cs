@@ -17,7 +17,6 @@ namespace KWZTerrainECS
                 if (authoring.UnitPrefab == null) return;
                 //authoring.UnitPrefab.transform.localScale *= 0.5f;
                 AddComponent(GetEntity(), new PrefabUnit(){Prefab = GetEntity(authoring.UnitPrefab)});
-                AddComponent<PrefabUnit>();
             }
         }
     }

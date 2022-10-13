@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: TerrainSettingsECS
   m_EditorClassIdentifier: 
   <NumChunkX>k__BackingField: 4
-  <NumChunkY>k__BackingField: 8
+  <NumChunkY>k__BackingField: 4
   <ChunkSettings>k__BackingField: {fileID: 11400000, guid: a1e98898182b2c748b9ead2e391941a4,
     type: 2}
   <NoiseSettings>k__BackingField: {fileID: 11400000, guid: da1c794ce29a8c84bb6f72e0d7bef432,

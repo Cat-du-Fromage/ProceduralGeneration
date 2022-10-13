@@ -36,11 +36,21 @@ namespace KWZTerrainECS
 
         protected override void OnUpdate()
         {
+
             return;
+        }
+        
+        //Order Move by Mouse Click
+        private void OrderUnitsMove()
+        {
+            //Met une destination
+            //Utiliser le EnableComponent ! pour le move
+            
+            //Savoir par quel chunkPasser
         }
 
         // On Update when they have a destination
-        private void MoveUnits()
+        private void OnMoveUnits()
         {
 
         }
@@ -59,7 +69,6 @@ namespace KWZTerrainECS
                 Entity unit = units[i];
                 EntityManager.SetName(unit, $"UnitTest_{i}");
                 SetComponent(unit, new Translation(){Value = spawnCells[i].Center});
-                
             }
             EntityManager.AddComponent<TagUnit>(units);
         }
