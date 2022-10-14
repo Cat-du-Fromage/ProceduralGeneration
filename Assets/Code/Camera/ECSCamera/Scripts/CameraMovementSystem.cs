@@ -33,6 +33,7 @@ namespace RTTCamera
         {
             base.OnStartRunning();
             Entity cameraEntity = GetSingletonEntity<Tag_Camera>();
+            EntityManager.SetName(cameraEntity, "RTTCamera");
             if (HasComponent<Tag_SelectionBox>(cameraEntity))
             {
                 InitializeCompanionGameObject(cameraEntity);

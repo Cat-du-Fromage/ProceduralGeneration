@@ -1,17 +1,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Physics.Authoring;
 using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 
-using static Unity.Entities.ComponentType;
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
 using static UnityEngine.Mesh;
@@ -27,7 +28,9 @@ namespace KWZTerrainECS
     public partial class GridInitializationSystem : SystemBase
     {
         private EntityQuery unInitializeGridTerrainQuery;
-        private EntityQuery chunksQuery;
+
+        //private PhysicsCategoryNames test;
+        //private EntityQuery chunksQuery;
 
         protected override void OnCreate()
         {
@@ -36,9 +39,7 @@ namespace KWZTerrainECS
             .WithNone<TagUnInitializeTerrain>()
             .Build(this);
             
-            chunksQuery = new EntityQueryBuilder(Temp)
-            .WithAll<TagChunk, Translation>()
-            .Build(this);
+            //chunksQuery = new EntityQueryBuilder(Temp).WithAll<TagChunk, Translation>().Build(this);
             
             RequireForUpdate(unInitializeGridTerrainQuery);
         }
@@ -51,11 +52,11 @@ namespace KWZTerrainECS
             ref BlobArray<Cell> cells = ref GenerateGridTerrain(terrain, terrainStruct);
             EntityManager.RemoveComponent<TagUnInitializeGrid>(terrain);
             
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             //Test2(ref cells);
-            #endif
-
+#endif
         }
+        
 #if UNITY_EDITOR
         private void Test(NativeArray<float3> verticesNtv)
         {
@@ -94,8 +95,7 @@ namespace KWZTerrainECS
 #endif
         private ref BlobArray<Cell> GenerateGridTerrain(Entity terrainEntity, in TerrainAspectStruct terrainStruct)
         {
-            //using NativeArray<Entity> chunkEntities = chunksQuery.ToEntityArray(TempJob);
-            DynamicBuffer<Entity> chunkEntities = EntityManager.GetBuffer<BufferChunk>(terrainEntity).Reinterpret<Entity>();
+            DynamicBuffer<Entity> chunkEntities = EntityManager.GetBuffer<BufferChunk>(terrainEntity, true).Reinterpret<Entity>();
             using MeshDataArray meshDataArray = GetChunksMeshDataArray(chunkEntities.AsNativeArray());
             
             BlobAssetReference<GridCells> blob = CreateGridCells(meshDataArray, terrainStruct, chunkEntities.AsNativeArray());

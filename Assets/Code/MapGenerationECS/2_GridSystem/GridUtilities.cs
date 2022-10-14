@@ -6,6 +6,8 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
+using static KWZTerrainECS.Utilities;
+
 namespace KWZTerrainECS
 {
     [Flags]
@@ -64,26 +66,22 @@ namespace KWZTerrainECS
             int numCells = chunkQuadsPerLine * chunkQuadsPerLine;
             
             NativeArray<Cell> chunkCells = new(numCells, allocator, NativeArrayOptions.UninitializedMemory);
-
-            int2 chunkCoord = Utilities.GetXY2(chunkIndex, mapNumChunkX);
+            int2 chunkCoord = GetXY2(chunkIndex, mapNumChunkX);
 
             for (int i = 0; i < numCells; i++)
             {
-                
-                int2 cellCoordInChunk = Utilities.GetXY2(i, chunkQuadsPerLine);
+                int2 cellCoordInChunk = GetXY2(i, chunkQuadsPerLine);
                 int2 cellGridCoord = chunkCoord * chunkQuadsPerLine + cellCoordInChunk;
                 int index = cellGridCoord.y * mapNumQuadsX + cellGridCoord.x;
-                
                 chunkCells[i] = gridCells.Cells[index];
             }
-            
             return chunkCells;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetGridCellIndexFromChunkCellIndex(int chunkSizeX,int mapSizeX, int cellIndexInsideChunk, int2 chunkCoord)
         {
-            int2 cellCoordInChunk = Utilities.GetXY2(cellIndexInsideChunk, chunkSizeX);
+            int2 cellCoordInChunk = GetXY2(cellIndexInsideChunk, chunkSizeX);
             int2 cellGridCoord = chunkCoord * chunkSizeX + cellCoordInChunk;
             return (cellGridCoord.y * mapSizeX) + cellGridCoord.x;
         }
