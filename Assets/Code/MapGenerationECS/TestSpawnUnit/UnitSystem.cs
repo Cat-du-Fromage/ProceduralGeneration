@@ -8,6 +8,8 @@ using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.HighDefinition;
+
+using static KWZTerrainECS.Utilities;
 using static Unity.Collections.Allocator;
 using static Unity.Collections.NativeArrayOptions;
 using RaycastHit = Unity.Physics.RaycastHit;
@@ -26,11 +28,14 @@ namespace KWZTerrainECS
     [CreateAfter(typeof(GridInitializationSystem)), UpdateAfter(typeof(GridInitializationSystem))]
     public partial class UnitSystem : SystemBase
     {
+        private BeginInitializationEntityCommandBufferSystem beginInitSys;
+        
         private readonly float screenWidth = Screen.width;
         private readonly float screenHeight = Screen.height;
         
         private EntityQuery terrainQuery;
         private EntityQuery cameraQuery;
+        private Entity TerrainEntity;
 
         private Entity cameraEntity;
         private Mouse mouse;
@@ -44,27 +49,19 @@ namespace KWZTerrainECS
                 .WithAll<TagTerrain>()
                 .WithNone<TagUnInitializeTerrain, TagUnInitializeGrid>()
                 .Build(this);
+            
+            beginInitSys = World.GetExistingSystemManaged<BeginInitializationEntityCommandBufferSystem>();
         }
 
         protected override void OnStartRunning()
         {
-            Entity terrain = terrainQuery.GetSingletonEntity();
-            /*
-            Entity cameraEntity = cameraQuery.GetSingletonEntity();
-            EntityManager.AddComponentObject(terrain, new CameraRaycastObject
-            {
-                Mouse = Mouse.current,
-                Camera = EntityManager.GetComponentObject<Camera>(cameraEntity),
-                CameraEntity = cameraEntity,
-            });
-            */
-            CreateUnits(terrain);
+            TerrainEntity = terrainQuery.GetSingletonEntity();
+
+            CreateUnits(TerrainEntity, 0);
             
             cameraEntity = cameraQuery.GetSingletonEntity();
             playerCamera = EntityManager.GetComponentObject<Camera>(cameraEntity);
             mouse = Mouse.current;
-            
-            //Debug.Log(playerCamera.name);
         }
 
         protected override void OnUpdate()
@@ -81,7 +78,26 @@ namespace KWZTerrainECS
             float2 mousePosition = mouse.position.ReadValue();
             if (TerrainRaycast(out RaycastHit hit, mousePosition, 100))
             {
-                TestCreateEntityAt(hit.Position);
+                TerrainAspect terrainAspect = EntityManager.GetAspectRO<TerrainAspect>(TerrainEntity);
+                
+                //TestCreateEntityAt(hit.Position);
+
+                int2 numChunkXY = terrainAspect.Terrain.NumChunksXY;
+                int chunkQuadsPerLine = terrainAspect.Chunk.NumQuadPerLine;
+                int chunkIndex = ChunkIndexFromPosition(hit.Position, numChunkXY, chunkQuadsPerLine);
+                
+                EntityCommandBuffer.ParallelWriter ecb = beginInitSys.CreateCommandBuffer().AsParallelWriter();// new EntityCommandBuffer(TempJob).AsParallelWriter();
+                Entities
+                .WithBurst()
+                .WithAll<TagUnit>()
+                .WithEntityQueryOptions(EntityQueryOptions.IgnoreComponentEnabledState)
+                .ForEach((Entity ent, int entityInQueryIndex, ref EnableChunkDestination chunkDest) =>
+                {
+                    chunkDest.Index = chunkIndex;
+                    ecb.SetComponentEnabled<EnableChunkDestination>(entityInQueryIndex, ent, true);
+                    //chunkDestLookUp.SetComponentEnabled(ent, true);
+                }).ScheduleParallel();
+                beginInitSys.AddJobHandleForProducer(Dependency);
             }
             
             //Met une destination
@@ -105,21 +121,26 @@ namespace KWZTerrainECS
         }
 
         // On arbitrary key pressed
-        private void CreateUnits(Entity terrain)
+        private void CreateUnits(Entity terrain, int spawnIndex)
         {
             Entity prefab = GetComponent<PrefabUnit>(terrain).Prefab;
             ref GridCells gridSystem = ref GetComponent<BlobCells>(terrain).Blob.Value;
             
-            NativeArray<Cell> spawnCells = gridSystem.GetCellsAtChunk(0,Temp);
+            NativeArray<Cell> spawnCells = gridSystem.GetCellsAtChunk(spawnIndex,Temp);
             NativeArray<Entity> units = EntityManager.Instantiate(prefab, spawnCells.Length, Temp);
+            
+            EntityManager.AddComponent<TagUnit>(units);
+            EntityManager.AddComponent<EnableChunkDestination>(units);
             
             for (int i = 0; i < units.Length; i++)
             {
                 Entity unit = units[i];
                 EntityManager.SetName(unit, $"UnitTest_{i}");
                 SetComponent(unit, new Translation(){Value = spawnCells[i].Center});
+                SetComponent(unit, new EnableChunkDestination(){Index = spawnIndex});
+                EntityManager.SetComponentEnabled<EnableChunkDestination>(unit, false);
             }
-            EntityManager.AddComponent<TagUnit>(units);
+
         }
 
         // When reach destination

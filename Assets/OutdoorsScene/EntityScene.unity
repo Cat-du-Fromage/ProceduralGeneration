@@ -309,17 +309,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1841698281, guid: e9fec8ffc0cae444ca89ece018e99a1e, type: 3}
-      propertyPath: UnitPrefab
-      value: 
-      objectReference: {fileID: 4443675950386228645, guid: 5414d038ab0aedc4d8de08717681bf21,
-        type: 3}
-    - target: {fileID: 1896333091536433443, guid: e9fec8ffc0cae444ca89ece018e99a1e,
-        type: 3}
-      propertyPath: GridDebugPrefab
-      value: 
-      objectReference: {fileID: 859674289939316122, guid: 040a95b210d231647bae074882138beb,
-        type: 3}
     - target: {fileID: 8678940358428973448, guid: e9fec8ffc0cae444ca89ece018e99a1e,
         type: 3}
       propertyPath: m_Name

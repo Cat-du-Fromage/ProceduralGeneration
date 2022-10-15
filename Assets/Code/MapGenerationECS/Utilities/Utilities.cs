@@ -30,14 +30,20 @@ namespace KWZTerrainECS
             return new int2(x, y);
         }
         
-        /*
-        public int ChunkIndexFromGridIndex(int gridIndex)
+        
+        public static int ChunkIndexFromGridIndex(int gridIndex, int chunkNumQuadsX ,int numChunkX)
         {
-            int2 cellCoord = GetXY2(gridIndex, TerrainSettings.NumQuadX);
-            int2 chunkCoord = (int2)floor(cellCoord / TerrainSettings.ChunkQuadsPerLine);
-            return chunkCoord.y * TerrainSettings.NumChunkWidth + chunkCoord.x;
+            int2 cellCoord = GetXY2(gridIndex, chunkNumQuadsX * numChunkX);
+            int2 chunkCoord = (int2)floor(cellCoord / chunkNumQuadsX);
+            return chunkCoord.y * numChunkX + chunkCoord.x;
         }
-        */
+        
+        public static int ChunkIndexFromPosition(in float3 pointPos, in int2 numChunkXY, int chunkNumQuadsPerLine)
+        {
+            int2 cellCoord = GetCoordFromPositionOffset(pointPos, numChunkXY * chunkNumQuadsPerLine);
+            int2 chunkCoord = (int2)floor(cellCoord / chunkNumQuadsPerLine);
+            return chunkCoord.y * numChunkXY.x + chunkCoord.x;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetIndexFromPosition(float2 pointPos, int2 mapXY)
@@ -72,6 +78,12 @@ namespace KWZTerrainECS
             float2 percents = (pointPos + offset) / mapXY;
             percents = clamp(percents, float2.zero, 1f);
             return clamp((int2)floor(mapXY * percents), int2.zero, mapXY - 1);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int2 GetCoordFromPositionOffset(in float3 pointPos, in int2 mapXY)
+        {
+            return (int2)(pointPos.xz + (float2)mapXY / 2f);
         }
         
         
