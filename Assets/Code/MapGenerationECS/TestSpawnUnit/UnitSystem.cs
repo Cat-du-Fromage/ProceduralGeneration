@@ -16,13 +16,6 @@ using RaycastHit = Unity.Physics.RaycastHit;
 
 namespace KWZTerrainECS
 {
-    public class CameraRaycastObject : IComponentData
-    {
-        public Mouse Mouse;
-        public Camera Camera;
-        public Entity CameraEntity;
-    }
-    
     [RequireMatchingQueriesForUpdate]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     [CreateAfter(typeof(GridInitializationSystem)), UpdateAfter(typeof(GridInitializationSystem))]
@@ -35,6 +28,8 @@ namespace KWZTerrainECS
         
         private EntityQuery terrainQuery;
         private EntityQuery cameraQuery;
+        private EntityQuery unitQuery;
+        
         private Entity TerrainEntity;
 
         private Entity cameraEntity;
@@ -48,6 +43,11 @@ namespace KWZTerrainECS
             terrainQuery = new EntityQueryBuilder(Temp)
                 .WithAll<TagTerrain>()
                 .WithNone<TagUnInitializeTerrain, TagUnInitializeGrid>()
+                .Build(this);
+            
+            unitQuery = new EntityQueryBuilder(Temp)
+                .WithAll<TagUnit, EnableChunkDestination>()
+                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState)
                 .Build(this);
             
             beginInitSys = World.GetExistingSystemManaged<BeginInitializationEntityCommandBufferSystem>();
@@ -78,26 +78,27 @@ namespace KWZTerrainECS
             float2 mousePosition = mouse.position.ReadValue();
             if (TerrainRaycast(out RaycastHit hit, mousePosition, 100))
             {
-                TerrainAspect terrainAspect = EntityManager.GetAspectRO<TerrainAspect>(TerrainEntity);
-                
+                //TerrainAspect terrainAspect = EntityManager.GetAspectRO<TerrainAspect>(TerrainEntity);
                 //TestCreateEntityAt(hit.Position);
+                AssignDestinationToUnits();
+            }
 
-                int2 numChunkXY = terrainAspect.Terrain.NumChunksXY;
-                int chunkQuadsPerLine = terrainAspect.Chunk.NumQuadPerLine;
+            void AssignDestinationToUnits()
+            {
+                int2 numChunkXY = GetComponent<DataTerrain>(TerrainEntity).NumChunksXY;
+                int chunkQuadsPerLine = GetComponent<DataChunk>(TerrainEntity).NumQuadPerLine;
                 int chunkIndex = ChunkIndexFromPosition(hit.Position, numChunkXY, chunkQuadsPerLine);
-                
-                EntityCommandBuffer.ParallelWriter ecb = beginInitSys.CreateCommandBuffer().AsParallelWriter();// new EntityCommandBuffer(TempJob).AsParallelWriter();
+                unitQuery.SetEnabledBitsOnAllChunks<EnableChunkDestination>(true);
+                //EntityCommandBuffer.ParallelWriter ecb = beginInitSys.CreateCommandBuffer().AsParallelWriter();// new EntityCommandBuffer(TempJob).AsParallelWriter();
                 Entities
-                .WithBurst()
-                .WithAll<TagUnit>()
-                .WithEntityQueryOptions(EntityQueryOptions.IgnoreComponentEnabledState)
-                .ForEach((Entity ent, int entityInQueryIndex, ref EnableChunkDestination chunkDest) =>
-                {
-                    chunkDest.Index = chunkIndex;
-                    ecb.SetComponentEnabled<EnableChunkDestination>(entityInQueryIndex, ent, true);
-                    //chunkDestLookUp.SetComponentEnabled(ent, true);
-                }).ScheduleParallel();
-                beginInitSys.AddJobHandleForProducer(Dependency);
+                    .WithBurst()
+                    .WithStoreEntityQueryInField(ref unitQuery)
+                    .ForEach((Entity ent, int entityInQueryIndex, ref EnableChunkDestination chunkDest) =>
+                    {
+                        chunkDest.Index = chunkIndex;
+                        //ecb.SetComponentEnabled<EnableChunkDestination>(entityInQueryIndex, ent, true);
+                    }).ScheduleParallel();
+                //beginInitSys.AddJobHandleForProducer(Dependency);
             }
             
             //Met une destination
