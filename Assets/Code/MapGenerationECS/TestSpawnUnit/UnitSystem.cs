@@ -89,28 +89,35 @@ namespace KWZTerrainECS
                 int chunkQuadsPerLine = GetComponent<DataChunk>(TerrainEntity).NumQuadPerLine;
                 int chunkIndex = ChunkIndexFromPosition(hit.Position, numChunkXY, chunkQuadsPerLine);
                 unitQuery.SetEnabledBitsOnAllChunks<EnableChunkDestination>(true);
-                //EntityCommandBuffer.ParallelWriter ecb = beginInitSys.CreateCommandBuffer().AsParallelWriter();// new EntityCommandBuffer(TempJob).AsParallelWriter();
                 Entities
                     .WithBurst()
                     .WithStoreEntityQueryInField(ref unitQuery)
                     .ForEach((Entity ent, int entityInQueryIndex, ref EnableChunkDestination chunkDest) =>
                     {
                         chunkDest.Index = chunkIndex;
-                        //ecb.SetComponentEnabled<EnableChunkDestination>(entityInQueryIndex, ent, true);
                     }).ScheduleParallel();
-                //beginInitSys.AddJobHandleForProducer(Dependency);
             }
             
             //Met une destination
             //Utiliser le EnableComponent ! pour le move
 
             //Savoir par quel chunkPasser
+            void GetChunksPath()
+            {
+                //Get current chunk in
+                //Get chunkDestination
+                
+                //Calculate A* on chunks
+                
+                
+                
+            }
         }
 
         // On Update when they have a destination
         private void OnMoveUnits()
         {
-
+            
         }
 
         private void TestCreateEntityAt(float3 position)
@@ -147,7 +154,7 @@ namespace KWZTerrainECS
         // When reach destination
         private void DestroyUnits()
         {
-            EntityQuery unitQuery = GetEntityQuery(typeof(TagUnit));
+            //EntityQuery unitQuery = GetEntityQuery(typeof(TagUnit));
             EntityManager.DestroyEntity(unitQuery);
         }
         
