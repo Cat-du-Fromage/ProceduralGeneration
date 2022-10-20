@@ -15,20 +15,43 @@ namespace KWZTerrainECS
         [BurstCompile(CompileSynchronously = false)]
         public partial struct JAStar : IJob
         {
-            [ReadOnly] public int NumChunkX;
             [ReadOnly] public int StartChunkIndex;
             [ReadOnly] public int EndChunkIndex;
-            //[ReadOnly] public NativeArray<bool> ObstaclesGrid;
-            public NativeArray<Node> Nodes;
-            
+            [ReadOnly] public int2 NumChunkAxis;
             [WriteOnly] public NativeList<int> PathList; // if PathNode.Length == 0 means No Path!
+            
+            [DeallocateOnJobCompletion] private NativeArray<Node> Nodes;
+            public JAStar(int start, int end, in int2 chunkAxis, NativeList<int> pathList)
+            {
+                StartChunkIndex = start;
+                EndChunkIndex = end;
+                NumChunkAxis = chunkAxis;
+                PathList = pathList;
+
+                int numChunks = cmul(chunkAxis);
+                Nodes = new NativeArray<Node>(numChunks, TempJob);
+                for (int i = 0; i < numChunks; i++)
+                {
+                    Nodes[i] = new Node(GetXY2(i, chunkAxis.x));
+                }
+            }
+            
+            public JAStar(int start, int end, in int2 chunkAxis, NativeList<int> pathList, NativeArray<Node> nodes)
+            {
+                StartChunkIndex = start;
+                EndChunkIndex = end;
+                NumChunkAxis = chunkAxis;
+                PathList = pathList;
+                Nodes = nodes;
+            }
             
             public void Execute()
             {
-                //NativeArray<Node> Nodes = new(cmul(NumChunkAxis), Temp);
+                int numChunk = cmul(NumChunkAxis);
+                //NativeArray<Node> chunkNodes = new (numChunk, Temp);
                 
-                NativeHashSet<int> openSet = new (16, Temp);
-                NativeHashSet<int> closeSet = new (16, Temp);
+                NativeHashSet<int> openSet = new (numChunk, Temp);
+                NativeHashSet<int> closeSet = new (numChunk, Temp);
                 
                 Nodes[StartChunkIndex] = StartNode(Nodes[StartChunkIndex], Nodes[EndChunkIndex]);
                 openSet.Add(StartChunkIndex);
@@ -47,6 +70,7 @@ namespace KWZTerrainECS
                     //Add "already check" Node AND remove from "To check"
                     openSet.Remove(currentNode);
                     closeSet.Add(currentNode);
+                    
                     //Add Neighbors to OpenSet
                     GetNeighborCells(currentNode, neighbors, closeSet);
                     if (neighbors.Length > 0)
@@ -73,11 +97,11 @@ namespace KWZTerrainECS
             
             private void GetNeighborCells(int index, NativeList<int> curNeighbors, NativeHashSet<int> closeSet)
             {
-                int2 coord = GetXY2(index,NumChunkX);
+                int2 coord = GetXY2(index,NumChunkAxis.x);
                 for (int i = 0; i < 4; i++)
                 {
-                    int neighborId = index.AdjCellFromIndex((1 << i), coord, NumChunkX);
-                    if (neighborId == -1 /*|| ObstaclesGrid[neighborId] == true*/ || closeSet.Contains(neighborId)) continue;
+                    int neighborId = index.AdjCellFromIndex((1 << i), coord, NumChunkAxis.x);
+                    if (neighborId == -1 || closeSet.Contains(neighborId)) continue;
 
                     Node currentNode = Nodes[index];
                     Node neighborNode = Nodes[neighborId];

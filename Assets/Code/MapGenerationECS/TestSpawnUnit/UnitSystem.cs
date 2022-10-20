@@ -64,6 +64,7 @@ namespace KWZTerrainECS
             
             cameraEntity = cameraQuery.GetSingletonEntity();
             playerCamera = EntityManager.GetComponentObject<Camera>(cameraEntity);
+
             mouse = Mouse.current;
         }
 
@@ -89,9 +90,15 @@ namespace KWZTerrainECS
             void AssignDestinationToUnits()
             {
                 int2 numChunkXY = GetComponent<DataTerrain>(TerrainEntity).NumChunksXY;
+                
                 int chunkQuadsPerLine = GetComponent<DataChunk>(TerrainEntity).NumQuadPerLine;
                 int chunkIndex = ChunkIndexFromPosition(hit.Position, numChunkXY, chunkQuadsPerLine);
                 unitQuery.SetEnabledBitsOnAllChunks<EnableChunkDestination>(true);
+                /*
+                using NativeList<int> pathList = new (cmul(numChunkXY), TempJob);
+                JAStar aStar = new JAStar(0, chunkIndex, numChunkXY, pathList);
+                aStar.Schedule().Complete();
+                */
                 Entities
                     .WithBurst()
                     .WithStoreEntityQueryInField(ref unitQuery)
