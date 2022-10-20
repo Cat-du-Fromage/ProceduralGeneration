@@ -7,7 +7,7 @@ using Unity.Jobs;
 using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
-using static KWZTerrainECS.Sides;
+using static KWZTerrainECS.ESides;
 
 using static KWZTerrainECS.Utilities;
 using static Unity.Mathematics.math;
@@ -56,7 +56,7 @@ namespace KWZTerrainECS
 
             for (int i = 0; i < 4; i++)
             {
-                Sides side = (Sides)i;
+                ESides side = (ESides)i;
 
                 bool2 isXOffset = new(side == Left, side == Right);
                 bool2 isYOffset = new(side == Top, side == Bottom);

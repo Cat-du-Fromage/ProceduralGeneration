@@ -11,11 +11,11 @@ namespace KWZTerrainECS
     public readonly struct GateWay
     {
         public readonly int ChunkIndex;
-        public readonly Sides Side;
+        public readonly ESides Side;
         public readonly int Index;
         public readonly int IndexAdjacent;
         
-        public GateWay(int chunkIndex, Sides side, int index = -1, int indexAdj = -1)
+        public GateWay(int chunkIndex, ESides side, int index = -1, int indexAdj = -1)
         {
             ChunkIndex = chunkIndex;
             Side = side;

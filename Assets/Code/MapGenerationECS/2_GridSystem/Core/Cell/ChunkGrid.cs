@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
-using static KWZTerrainECS.Sides;
+using static KWZTerrainECS.ESides;
 
 using static KWZTerrainECS.Utilities;
 using static Unity.Mathematics.math;
@@ -88,7 +88,7 @@ namespace KWZTerrainECS
             for (int i = 0; i < 4; i++)
             {
                 
-                Sides side = (Sides)i;
+                ESides side = (ESides)i;
 
                 if (side == Bottom && chunkCoord.y == 0)                 continue;
                 if (side == Top    && chunkCoord.y == numChunksXY.y - 1) continue;
