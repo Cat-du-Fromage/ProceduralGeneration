@@ -48,8 +48,7 @@ namespace KWZTerrainECS
             public void Execute()
             {
                 int numChunk = cmul(NumChunkAxis);
-                //NativeArray<Node> chunkNodes = new (numChunk, Temp);
-                
+
                 NativeHashSet<int> openSet = new (numChunk, Temp);
                 NativeHashSet<int> closeSet = new (numChunk, Temp);
                 

@@ -94,33 +94,30 @@ namespace KWZTerrainECS
                 int chunkQuadsPerLine = GetComponent<DataChunk>(TerrainEntity).NumQuadPerLine;
                 int chunkIndex = ChunkIndexFromPosition(hit.Position, numChunkXY, chunkQuadsPerLine);
                 unitQuery.SetEnabledBitsOnAllChunks<EnableChunkDestination>(true);
-                /*
-                using NativeList<int> pathList = new (cmul(numChunkXY), TempJob);
-                JAStar aStar = new JAStar(0, chunkIndex, numChunkXY, pathList);
-                aStar.Schedule().Complete();
-                */
+                
                 Entities
-                    .WithBurst()
-                    .WithStoreEntityQueryInField(ref unitQuery)
-                    .ForEach((Entity ent, int entityInQueryIndex, ref EnableChunkDestination chunkDest) =>
-                    {
-                        chunkDest.Index = chunkIndex;
-                    }).ScheduleParallel();
+                .WithBurst()
+                .WithStoreEntityQueryInField(ref unitQuery)
+                .ForEach((Entity ent, int entityInQueryIndex, ref EnableChunkDestination chunkDest) =>
+                {
+                    chunkDest.Index = chunkIndex;
+                }).ScheduleParallel();
+                
+                
             }
             
             //Met une destination
             //Utiliser le EnableComponent ! pour le move
 
             //Savoir par quel chunkPasser
-            void GetChunksPath()
+            void GetChunksPath(int chunkStartIndex, int chunkDestIndex, int2 numChunkXY)
             {
                 //Get current chunk in
+                using NativeList<int> pathList = new (cmul(numChunkXY),TempJob);
+                JAStar aStar = new (chunkStartIndex, chunkDestIndex, numChunkXY, pathList);
+                JobHandle jobHandle = aStar.Schedule();
                 //Get chunkDestination
-                
                 //Calculate A* on chunks
-                
-                
-                
             }
         }
 
