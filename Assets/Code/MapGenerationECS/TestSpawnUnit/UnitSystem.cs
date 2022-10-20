@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
@@ -9,6 +11,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.HighDefinition;
 
+using static Unity.Mathematics.math;
 using static KWZTerrainECS.Utilities;
 using static Unity.Collections.Allocator;
 using static Unity.Collections.NativeArrayOptions;
@@ -167,6 +170,7 @@ namespace KWZTerrainECS
             return PhysicsUtilities.Raycast(out hit, origin, direction, distance, 0);
         }
         //==============================================================================================================
+        
         
     }
 }
