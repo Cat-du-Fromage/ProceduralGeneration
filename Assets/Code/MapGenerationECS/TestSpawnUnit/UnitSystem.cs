@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -174,7 +175,46 @@ namespace KWZTerrainECS
             return PhysicsUtilities.Raycast(out hit, origin, direction, distance, 0);
         }
         //==============================================================================================================
+
+        private void GetSharedUnitsPath()
+        {
+            NativeList<int> SharedStart = new NativeList<int>(Allocator.TempJob);
+
+            //Job 
+            
+            NativeArraySharedInt sharedStartChunkIndex = new NativeArraySharedInt(SharedStart.AsArray(), TempJob);
+            sharedStartChunkIndex.Schedule(default).Complete();
+
+            int numSharedValue = sharedStartChunkIndex.GetSharedValueIndexCountArray().Length;
+            
+            // foreach Unique start index calculate Pathfinding
+            for (int i = 0; i < numSharedValue; i++)
+            {
+                
+            }
+            
+            // foreach Units => depending of units current chunk index
+            // Get path corresponding to path[0] (unit_startIndex == path[0])
+            
+        }
+    }
+
+    [BurstCompile]
+    public partial struct JTest : IJobEntity
+    {
+        [ReadOnly] public int ChunkDestinationIndex;
+        [ReadOnly] public int ChunkQuadsPerLine;
+        [ReadOnly] public int2 NumChunkXY;
         
+        [WriteOnly, NativeDisableParallelForRestriction]
+        public NativeList<int>.ParallelWriter ChunkStartIndices;
         
+        /*[EntityInQueryIndex] int entityInQueryIndex, */
+        public void Execute(in Translation position, ref EnableChunkDestination enableDest)
+        {
+            int startChunkIndex = ChunkIndexFromPosition(position.Value, NumChunkXY, ChunkQuadsPerLine);
+            ChunkStartIndices.AddNoResize(startChunkIndex);
+            enableDest.Index = ChunkDestinationIndex;
+        }
     }
 }
