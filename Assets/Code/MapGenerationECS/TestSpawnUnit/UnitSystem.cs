@@ -14,6 +14,7 @@ using UnityEngine.Rendering.HighDefinition;
 
 using static Unity.Mathematics.math;
 using static KWZTerrainECS.Utilities;
+using static KWZTerrainECS.PhysicsUtilities;
 using static Unity.Collections.Allocator;
 using static Unity.Collections.NativeArrayOptions;
 using RaycastHit = Unity.Physics.RaycastHit;
@@ -83,53 +84,15 @@ namespace KWZTerrainECS
             float2 mousePosition = mouse.position.ReadValue();
             if (TerrainRaycast(out RaycastHit hit, mousePosition, 100))
             {
-                //TerrainAspect terrainAspect = EntityManager.GetAspectRO<TerrainAspect>(TerrainEntity);
-                //TestCreateEntityAt(hit.Position);
-                AssignDestinationToUnits();
-            }
-
-            void AssignDestinationToUnits()
-            {
-                
+                //Entity indicator = TestCreateEntityAt(hit.Position);
                 int2 numChunkXY = GetComponent<DataTerrain>(TerrainEntity).NumChunksXY;
-                
                 int chunkQuadsPerLine = GetComponent<DataChunk>(TerrainEntity).NumQuadPerLine;
-                int destinationChunkIndex = ChunkIndexFromPosition(hit.Position, numChunkXY, chunkQuadsPerLine);
+                
                 unitQuery.SetEnabledBitsOnAllChunks<EnableChunkDestination>(true);
-                //GetSharedUnitsPath(destinationChunkIndex, chunkQuadsPerLine, numChunkXY);
                 
-                
-
-                int numUnits = unitQuery.CalculateEntityCount();
-                NativeParallelHashSet<int> chunkStartIndices = new(numUnits, TempJob);
-                JAssignDestination assignDestinationJob = new JAssignDestination
-                {
-                    ChunkDestinationIndex = destinationChunkIndex,
-                    ChunkQuadsPerLine = chunkQuadsPerLine,
-                    NumChunkXY = numChunkXY,
-                    ChunkStartIndices = chunkStartIndices.AsParallelWriter(),
-                };
-                assignDestinationJob.ScheduleParallel(unitQuery);
-
-               
-
-                chunkStartIndices.Dispose(Dependency);
-                
+                int destinationChunkIndex = ChunkIndexFromPosition(hit.Position, numChunkXY, chunkQuadsPerLine);
+                GetSharedUnitsPath(destinationChunkIndex, chunkQuadsPerLine, numChunkXY);
             }
-        }
-
-        // On Update when they have a destination
-        private void OnMoveUnits()
-        {
-            
-        }
-
-        private void TestCreateEntityAt(float3 position)
-        {
-            Entity terrain = terrainQuery.GetSingletonEntity();
-            Entity prefab = GetComponent<PrefabUnit>(terrain).Prefab;
-            Entity spawn = EntityManager.Instantiate(prefab);
-            SetComponent(spawn, new Translation(){Value = position});
         }
 
         // On arbitrary key pressed
@@ -143,8 +106,7 @@ namespace KWZTerrainECS
             
             EntityManager.AddComponent<TagUnit>(units);
             EntityManager.AddComponent<EnableChunkDestination>(units);
-            
-            
+
             for (int i = 0; i < units.Length; i++)
             {
                 Entity unit = units[i];
@@ -171,7 +133,7 @@ namespace KWZTerrainECS
         {
             float3 origin = GetComponent<Translation>(cameraEntity).Value;
             float3 direction = playerCamera.ScreenToWorldDirection(mousePosition, screenWidth, screenHeight);
-            return PhysicsUtilities.Raycast(out hit, origin, direction, distance, 0);
+            return EntityManager.Raycast(out hit, origin, direction, distance, 0);
         }
         //==============================================================================================================
 
@@ -187,62 +149,62 @@ namespace KWZTerrainECS
                 NumChunkXY = numChunkXY,
                 ChunkStartIndices = chunkStartIndices.AsParallelWriter(),
             };
-            assignDestinationJob.ScheduleParallel(Dependency);
-            //JobHandle jh1 = assignDestinationJob.ScheduleParallel(unitQuery, Dependency);
+            assignDestinationJob.ScheduleParallel(unitQuery, Dependency).Complete();
+            AssignPathsToEntities();
 
-            // foreach Unique start index calculate Pathfinding
-            //JobHandle fullJob = default;
-/*
-            NativeList<JobHandle> jhList = new (chunkStartIndices.Count(), Temp);
-            foreach (int startIndex in chunkStartIndices)
+            // -------------------------------------------------------------------------------------------------------
+            // INNER METHODS
+            // -------------------------------------------------------------------------------------------------------
+            void AssignPathsToEntities()
             {
-                NativeList<int> pathList = new (cmul(numChunkXY),TempJob);
-                JAStar aStar = new (startIndex, destinationIndex, numChunkXY, pathList);
-                JobHandle jh2 = aStar.Schedule(jh1);
-                
-                JAddPathToEntities job2 = new JAddPathToEntities
+                NativeList<int> pathList = new(cmul(numChunkXY), TempJob);
+                foreach (int startIndex in chunkStartIndices)
                 {
-                    ChunkQuadsPerLine = chunkQuadsPerLine,
-                    NumChunkXY = numChunkXY,
-                    SharedPathList = pathList.AsArray(),
-                };
-                JobHandle jh3 = job2.ScheduleParallel(unitQuery, jh2);
-                jhList.Add(JobHandle.CombineDependencies(jh2, jh3));
-                
-                pathList.Dispose(jhList[0]);
-            }
-            */
-            // foreach Units => depending of units current chunk index
-            // Get path corresponding to path[0] (unit_startIndex == path[0])
+                    JAStar aStar = new(startIndex, destinationIndex, numChunkXY, pathList);
+                    JobHandle jh2 = aStar.Schedule();
 
+                    JAddPathToEntities job2 = new JAddPathToEntities
+                    {
+                        ChunkQuadsPerLine = chunkQuadsPerLine,
+                        NumChunkXY = numChunkXY,
+                        SharedPathList = pathList,
+                    };
+                    JobHandle jh3 = job2.ScheduleParallel(unitQuery, jh2);
+                    jh3.Complete();
+                    pathList.Clear();
+                }
+                pathList.Dispose();
+            }
         }
-        /*
-        private void GetSharedIndices()
+        
+#if UNITY_EDITOR
+        private Entity TestCreateEntityAt(float3 position)
         {
-            NativeArraySharedInt sharedStartChunkIndex = new (sharedStart.AsArray(), TempJob);
-            sharedStartChunkIndex.Schedule(dependency).Complete();
-            int numSharedValue = sharedStartChunkIndex.GetSharedValueIndexCountArray().Length;
+            Entity terrain = terrainQuery.GetSingletonEntity();
+            Entity prefab = GetComponent<PrefabUnit>(terrain).Prefab;
+            Entity spawn = EntityManager.Instantiate(prefab);
+            SetComponent(spawn, new Translation(){Value = position});
+            return spawn;
         }
-        */
+#endif
     }
 
-    //[WithAll(typeof(TagUnit))]
+    [BurstCompile]
     public partial struct JAddPathToEntities : IJobEntity
     {
         [ReadOnly] public int ChunkQuadsPerLine;
         [ReadOnly] public int2 NumChunkXY;
-        [ReadOnly] public NativeArray<int> SharedPathList;
+        [ReadOnly] public NativeList<int> SharedPathList;
         
         public void Execute(in Translation position, ref DynamicBuffer<BufferPathList> pathList)
         {
             int startChunkIndex = ChunkIndexFromPosition(position.Value, NumChunkXY, ChunkQuadsPerLine);
-            Debug.Log($"startIndex_Position : {startChunkIndex} , first index in pathList : {SharedPathList[0]}");
-            if (startChunkIndex != SharedPathList[0]) return;
-            pathList.CopyFrom(SharedPathList.Reinterpret<BufferPathList>());
+            if (startChunkIndex != SharedPathList[^1]) return;
+            pathList.CopyFrom(SharedPathList.AsArray().Reinterpret<BufferPathList>());
         }
     }
 
-    //[BurstCompile]
+    [BurstCompile]
     public partial struct JAssignDestination : IJobEntity
     {
         [ReadOnly] public int ChunkDestinationIndex;
@@ -252,7 +214,6 @@ namespace KWZTerrainECS
         [WriteOnly, NativeDisableParallelForRestriction]
         public NativeParallelHashSet<int>.ParallelWriter ChunkStartIndices;
         
-        /*[EntityInQueryIndex] int entityInQueryIndex, */
         public void Execute(in Translation position, ref EnableChunkDestination enableDest)
         {
             int startChunkIndex = ChunkIndexFromPosition(position.Value, NumChunkXY, ChunkQuadsPerLine);

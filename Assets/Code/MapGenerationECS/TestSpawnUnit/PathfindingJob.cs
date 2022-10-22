@@ -13,7 +13,7 @@ using static Unity.Collections.Allocator;
 
 namespace KWZTerrainECS
 {
-        [BurstCompile(CompileSynchronously = false)]
+        //[BurstCompile(CompileSynchronously = false)]
         public partial struct JAStar : IJob
         {
             [ReadOnly] public int StartChunkIndex;
@@ -92,6 +92,7 @@ namespace KWZTerrainECS
                     currentNode = Nodes[currentNode].CameFromNodeIndex;
                     PathList.Add(currentNode);
                 }
+                
             }
             
             private void GetNeighborCells(int index, NativeList<int> curNeighbors, NativeHashSet<int> closeSet)

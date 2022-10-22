@@ -16,16 +16,15 @@ namespace KWZTerrainECS
 {
     public static class PhysicsUtilities
     {
-        public static bool Raycast(out RaycastHit hit, in float3 origin, in float3 direction, float distance, int mask)
+        public static bool Raycast(this EntityManager em, out RaycastHit hit, in float3 origin, in float3 direction, float distance, int mask)
         {
             // Set up Entity Query to get PhysicsWorldSingleton
             // If doing this in SystemBase or ISystem
             // , call GetSingleton<PhysicsWorldSingleton>()/SystemAPI.GetSingleton<PhysicsWorldSingleton>() directly.
-            EntityQueryBuilder builder = new EntityQueryBuilder(Temp).WithAll<PhysicsWorldSingleton>();
-            EntityQuery singletonQuery = DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(builder);
-            CollisionWorld collisionWorld = singletonQuery.GetSingleton<PhysicsWorldSingleton>().CollisionWorld;
-            singletonQuery.Dispose();
-            //PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
+            //var builder = new EntityQueryBuilder(Temp).WithAll<PhysicsWorldSingleton>().Build(em);
+            //using EntityQuery singletonQuery = DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(builder);
+            EntityQuery builder = new EntityQueryBuilder(Temp).WithAll<PhysicsWorldSingleton>().Build(em);
+            PhysicsWorldSingleton physicsWorld = builder.GetSingleton<PhysicsWorldSingleton>();
 
             RaycastInput input = new RaycastInput()
             {
@@ -38,8 +37,20 @@ namespace KWZTerrainECS
                     GroupIndex = 0
                 }
             };
-            bool haveHit = collisionWorld.CastRay(input, out hit);
-            return haveHit;
+            //bool haveHit = physicsWorld.CastRay(input, out hit);
+            //return haveHit;
+            
+            using NativeReference<RaycastHit> rayHit = new (TempJob);
+            JSingleRaycast job = new ()
+            {
+                PhysicsWorld = physicsWorld,
+                RayInput = input,
+                RayCastResult = rayHit
+            };
+            job.RunByRef();
+            hit = rayHit.Value;
+            
+            return hit.Entity != Entity.Null;
         }
 
         public static JobHandle ScheduleBatchRayCast(this PhysicsWorldSingleton physicsWorld,
@@ -74,12 +85,14 @@ namespace KWZTerrainECS
         {
             [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
             [ReadOnly] public RaycastInput RayInput;
-            [WriteOnly] public RaycastHit RayCastResult;
+            [WriteOnly] public NativeReference<RaycastHit> RayCastResult;
+            
+            
 
             public void Execute()
             {
                 PhysicsWorld.CastRay(RayInput, out RaycastHit hit);
-                RayCastResult = hit;
+                RayCastResult.Value = hit;
             }
         }
     }
