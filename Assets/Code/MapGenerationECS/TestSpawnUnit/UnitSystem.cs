@@ -199,7 +199,8 @@ namespace KWZTerrainECS
         public void Execute(in Translation position, ref DynamicBuffer<BufferPathList> pathList)
         {
             int startChunkIndex = ChunkIndexFromPosition(position.Value, NumChunkXY, ChunkQuadsPerLine);
-            if (startChunkIndex != SharedPathList[^1]) return;
+            //Debug.Log($"startChunkIndex: {startChunkIndex}; SharedPathList[0] : {SharedPathList[0]}");
+            if (startChunkIndex != SharedPathList[0]/*SharedPathList[^1]*/) return;
             pathList.CopyFrom(SharedPathList.AsArray().Reinterpret<BufferPathList>());
         }
     }

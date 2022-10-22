@@ -30,7 +30,7 @@ namespace KWZTerrainECS
             return new int2(x, y);
         }
         
-        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ChunkIndexFromGridIndex(int gridIndex, int chunkNumQuadsX ,int numChunkX)
         {
             int2 cellCoord = GetXY2(gridIndex, chunkNumQuadsX * numChunkX);
@@ -38,6 +38,7 @@ namespace KWZTerrainECS
             return chunkCoord.y * numChunkX + chunkCoord.x;
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ChunkIndexFromPosition(in float3 pointPos, in int2 numChunkXY, int chunkNumQuadsPerLine)
         {
             int2 cellCoord = GetCoordFromPositionOffset(pointPos, numChunkXY * chunkNumQuadsPerLine);
