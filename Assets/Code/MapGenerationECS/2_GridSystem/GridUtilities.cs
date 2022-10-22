@@ -6,6 +6,10 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
+using static Unity.Mathematics.math;
+using static Unity.Collections.Allocator;
+using static Unity.Collections.NativeArrayOptions;
+
 using static KWZTerrainECS.Utilities;
 
 namespace KWZTerrainECS
@@ -39,7 +43,79 @@ namespace KWZTerrainECS
             AdjacentCell.BottomRight when pos.y > 0 && pos.x < width - 1         => (index - width) + 1,
             _ => -1,
         };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int AdjacentCellFromIndex(int index, int adjCell, in int2 coord, in int2 bounds)
+        {
+            bool isLeft =  coord.x > 0;
+            bool isRight = coord.x < bounds.x - 1;
+            bool isTop = coord.y < bounds.y - 1;
+            bool isBottom = coord.y > 0;
+            return (AdjacentCell)adjCell switch
+            {
+                AdjacentCell.Top         when isTop               => index + bounds.x,
+                AdjacentCell.Right       when isRight             => index + 1,
+                AdjacentCell.Left        when isLeft              => index - 1,
+                AdjacentCell.Bottom      when isBottom            => index - bounds.x,
+                AdjacentCell.TopLeft     when isTop && isLeft     => (index + bounds.x) - 1,
+                AdjacentCell.TopRight    when isTop && isRight    => (index + bounds.x) + 1,
+                AdjacentCell.BottomRight when isBottom && isRight => (index - bounds.x) + 1,
+                AdjacentCell.BottomLeft  when isBottom && isLeft  => (index - bounds.x) - 1,
+                _ => -1
+            };
+        }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int AdjacentCellFromIndex(int index, AdjacentCell adjCell, in int2 coord, in int2 bounds)
+        {
+            bool isLeft =  coord.x > 0;
+            bool isRight = coord.x < bounds.x - 1;
+            bool isTop = coord.y < bounds.y - 1;
+            bool isBottom = coord.y > 0;
+
+            int width = bounds.x;
+            return adjCell switch
+            {
+                AdjacentCell.Top         when isTop               => index + width,
+                AdjacentCell.Right       when isRight             => index + 1,
+                AdjacentCell.Left        when isLeft              => index - 1,
+                AdjacentCell.Bottom      when isBottom            => index - width,
+                AdjacentCell.TopLeft     when isTop && isLeft     => (index + width) - 1,
+                AdjacentCell.TopRight    when isTop && isRight    => (index + width) + 1,
+                AdjacentCell.BottomRight when isBottom && isRight => (index - width) + 1,
+                AdjacentCell.BottomLeft  when isBottom && isLeft  => (index - width) - 1,
+                _ => -1
+            };
+        }
+        
+        /*
+         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int AdjacentCellFromIndex(int index, AdjacentCell adjCell, in int2 pos, int width)
+        {
+            switch (adjCell) 
+            {
+                case AdjacentCell.Top when pos.x > 0: 
+                    return index - 1;
+                case AdjacentCell.Right when pos.x < width - 1: 
+                    return index + 1;
+                case AdjacentCell.Left when pos.y < width - 1: 
+                    return index + width;
+                case AdjacentCell.Bottom when pos.y < width - 1 && pos.x > 0:
+                    return (index + width) - 1;
+                case AdjacentCell.TopLeft when pos.y < width - 1 && pos.x < width - 1:
+                    return (index + width) + 1;
+                case AdjacentCell.TopRight when pos.y > 0:
+                    return index - width;
+                case AdjacentCell.BottomRight when pos.y > 0 && pos.x > 0:
+                    return (index - width) - 1;
+                case AdjacentCell.BottomLeft  when pos.y > 0 && pos.x < width - 1:
+                    return (index - width) + 1;
+                default:
+                    return -1;
+            }
+        }
+         */
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int AdjCellFromIndex(this int index, int adjCell, in int2 pos, int width) 
         => adjCell switch
@@ -56,7 +132,7 @@ namespace KWZTerrainECS
         };
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static NativeArray<Cell> GetCellsAtChunk(ref this GridCells gridCells, int chunkIndex, Allocator allocator = Allocator.TempJob)
+        public static NativeArray<Cell> GetCellsAtChunk(ref this GridCells gridCells, int chunkIndex, Allocator allocator = TempJob)
         {
             //store value from blob
             int chunkQuadsPerLine = gridCells.ChunkSize;
@@ -65,7 +141,7 @@ namespace KWZTerrainECS
             int mapNumQuadsX = mapNumChunkX * chunkQuadsPerLine;
             int numCells = chunkQuadsPerLine * chunkQuadsPerLine;
             
-            NativeArray<Cell> chunkCells = new(numCells, allocator, NativeArrayOptions.UninitializedMemory);
+            NativeArray<Cell> chunkCells = new(numCells, allocator, UninitializedMemory);
             int2 chunkCoord = GetXY2(chunkIndex, mapNumChunkX);
 
             for (int i = 0; i < numCells; i++)
@@ -79,11 +155,11 @@ namespace KWZTerrainECS
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetGridCellIndexFromChunkCellIndex(int chunkSizeX,int mapSizeX, int cellIndexInsideChunk, int2 chunkCoord)
+        public static int GetGridCellIndexFromChunkCellIndex(int cellIndexInsideChunk, int chunkSizeX, int mapSizeX, int2 chunkCoord)
         {
             int2 cellCoordInChunk = GetXY2(cellIndexInsideChunk, chunkSizeX);
-            int2 cellGridCoord = chunkCoord * chunkSizeX + cellCoordInChunk;
-            return (cellGridCoord.y * mapSizeX) + cellGridCoord.x;
+            int2 cellFullGridCoord = chunkCoord * chunkSizeX + cellCoordInChunk;
+            return (cellFullGridCoord.y * mapSizeX) + cellFullGridCoord.x;
         }
     }
 }

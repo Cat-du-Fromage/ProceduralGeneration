@@ -6,6 +6,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
+using static KWZTerrainECS.GridUtilities;
 using static Unity.Mathematics.math;
 using static KWZTerrainECS.Utilities;
 using static Unity.Collections.Allocator;
@@ -48,7 +49,6 @@ namespace KWZTerrainECS
             public void Execute()
             {
                 int numChunk = cmul(NumChunkAxis);
-
                 NativeHashSet<int> openSet = new (numChunk, Temp);
                 NativeHashSet<int> closeSet = new (numChunk, Temp);
                 
@@ -99,7 +99,7 @@ namespace KWZTerrainECS
                 int2 coord = GetXY2(index,NumChunkAxis.x);
                 for (int i = 0; i < 4; i++)
                 {
-                    int neighborId = index.AdjCellFromIndex((1 << i), coord, NumChunkAxis.x);
+                    int neighborId = AdjacentCellFromIndex(index, (1 << i), coord, NumChunkAxis);
                     if (neighborId == -1 || closeSet.Contains(neighborId)) continue;
 
                     Node currentNode = Nodes[index];
@@ -109,7 +109,6 @@ namespace KWZTerrainECS
                     if (tentativeCost < neighborNode.GCost)
                     {
                         curNeighbors.Add(neighborId);
-                    
                         int gCost = CalculateDistanceCost(neighborNode, Nodes[StartChunkIndex]);
                         int hCost = CalculateDistanceCost(neighborNode, Nodes[EndChunkIndex]);
                         Nodes[neighborId] = new Node(index, gCost, hCost, neighborNode.Coord);
