@@ -1,18 +1,12 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.Physics;
+using Codice.CM.SEIDInfo;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Physics.Authoring;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
-
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
 using static UnityEngine.Mesh;
@@ -38,7 +32,13 @@ namespace KWZTerrainECS
 
             RequireForUpdate(unInitializeGridTerrainQuery);
         }
-
+/*
+        protected override void OnStartRunning()
+        {
+            int size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(FlowFieldDirection));
+            Debug.Log($"size FlowFieldDirection : {size}");
+        }
+*/
         protected override void OnUpdate()
         {
             Entity terrain = GetSingletonEntity<TagTerrain>();
@@ -46,7 +46,6 @@ namespace KWZTerrainECS
             
             ref BlobArray<Cell> cells = ref GenerateGridTerrain(terrain, terrainStruct);
             EntityManager.RemoveComponent<TagUnInitializeGrid>(terrain);
-            
 #if UNITY_EDITOR
             //Test2(ref cells);
 #endif
@@ -169,55 +168,7 @@ namespace KWZTerrainECS
                 OrderedVertices[fullMapIndex] = ChunkPosition + MeshVertices[index];
             }
         }
-        /*
-        [BurstCompile(CompileSynchronously = false)]
-        private struct JOrderArrayIndexByChunkIndex : IJobFor
-        {
-            [ReadOnly] public int CellSize;
-            [ReadOnly] public int ChunkSize;
-            [ReadOnly] public int NumCellX;
-            [ReadOnly] public int NumChunkX;
-            
-            [WriteOnly, NativeDisableParallelForRestriction] public NativeArray<int> SortedArray;
 
-            public void Execute(int index)
-            {
-                int2 cellCoord = GetXY2(index, NumCellX);
-                
-                float ratio = CellSize / (float)ChunkSize; //CAREFULL! NOT ChunkCellWidth but Cell compare to Chunk!
-                int2 chunkCoord = (int2)floor((float2)cellCoord * ratio);
-                int2 coordInChunk = cellCoord - (chunkCoord * ChunkSize);
-
-                int indexCellInChunk = mad(coordInChunk.y, ChunkSize,coordInChunk.x );
-                int chunkIndex =  mad(chunkCoord.y, NumChunkX, chunkCoord.x);
-                int totalCellInChunk = ChunkSize * ChunkSize;
-                
-                int indexFinal = mad(chunkIndex, totalCellInChunk, indexCellInChunk);
-
-                SortedArray[indexFinal] = index;
-            }
-
-            // simplification
-            public static NativeArray<int> GetQuadsIndexOrderedByChunk(in TerrainAspectStruct terrainStruct)
-            {
-                int terrainNumQuads = cmul(terrainStruct.Terrain.NumQuadsXY);
-                NativeArray<int> nativeOrderedIndices = new (terrainNumQuads, TempJob, UninitializedMemory);
-
-                JOrderArrayIndexByChunkIndex job = new()
-                {
-                    CellSize = 1,
-                    ChunkSize = terrainStruct.Chunk.NumQuadPerLine,
-                    NumCellX = terrainStruct.Terrain.NumQuadsXY.x,
-                    NumChunkX = terrainStruct.Terrain.NumChunksXY.x,
-                    SortedArray = nativeOrderedIndices
-                };
-                JobHandle jobHandle = job.ScheduleParallel(terrainNumQuads, JobWorkerCount - 1, default);
-                jobHandle.Complete();
-                return nativeOrderedIndices;
-            }
-        }
-        */
-        
 #if UNITY_EDITOR
         private void Test(NativeArray<float3> verticesNtv)
         {

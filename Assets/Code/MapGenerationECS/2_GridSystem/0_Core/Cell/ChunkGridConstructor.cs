@@ -9,6 +9,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using static KWZTerrainECS.ESides;
 
+using static Unity.Collections.Allocator;
+using static Unity.Collections.NativeArrayOptions;
+
 using static KWZTerrainECS.Utilities;
 using static Unity.Mathematics.math;
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
@@ -24,7 +27,7 @@ namespace KWZTerrainECS
             int bufferCapacity = (chunkSize * 4) * numChunks;
             buffer.EnsureCapacity(bufferCapacity);
 
-            NativeArray<GateWay> gates = new (bufferCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<GateWay> gates = new (bufferCapacity,TempJob,UninitializedMemory);
 
             JConstructGrid job = new JConstructGrid
             {
@@ -88,13 +91,19 @@ namespace KWZTerrainECS
 
                     int offsetChunkIndex = chunkIndex * ChunkQuadPerLine * 4;
                     int indexOffset = offsetChunkIndex + (i * ChunkQuadPerLine + j);
-                    
+
+                    int indexInChunk = GetIndexInChunk(gateCoord, offsetChunk);
                     GateWays[indexOffset] = any(isOutLimit) 
                         ? new GateWay(chunkIndex, side) 
-                        : new GateWay(chunkIndex, side,gateIndex, adjGateIndex);
+                        : new GateWay(chunkIndex, side,indexInChunk,gateIndex, adjGateIndex);
                 }
             }
         }
 
+        private int GetIndexInChunk(int2 gateCoord, int2 offsetChunk)
+        {
+            int2 coordInChunk = gateCoord - offsetChunk;
+            return coordInChunk.y * ChunkQuadPerLine + coordInChunk.x;
+        }
     }
 }
