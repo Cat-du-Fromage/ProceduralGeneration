@@ -163,7 +163,9 @@ namespace KWZTerrainECS
                 int chunkNumQuadPerLine = ChunkNumVertexPerLine - 1;
                 int2 offset = ChunkCoord * chunkNumQuadPerLine;
                 int2 fullTerrainCoord = cellCoord + offset;
-                int fullMapIndex = fullTerrainCoord.y * TerrainNumVertexPerLine + fullTerrainCoord.x;
+                
+                // fullTerrainCoord.y * TerrainNumVertexPerLine + fullTerrainCoord.x;
+                int fullMapIndex = GetIndex(fullTerrainCoord, TerrainNumVertexPerLine);
                 
                 OrderedVertices[fullMapIndex] = ChunkPosition + MeshVertices[index];
             }

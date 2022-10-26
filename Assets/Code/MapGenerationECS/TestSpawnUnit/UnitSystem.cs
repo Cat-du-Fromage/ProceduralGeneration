@@ -62,7 +62,7 @@ namespace KWZTerrainECS
         {
             TerrainEntity = terrainQuery.GetSingletonEntity();
 
-            CreateUnits(TerrainEntity, 0);
+            CreateUnits(TerrainEntity, 4);
             
             cameraEntity = cameraQuery.GetSingletonEntity();
             playerCamera = EntityManager.GetComponentObject<Camera>(cameraEntity);

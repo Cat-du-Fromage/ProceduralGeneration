@@ -63,7 +63,7 @@ namespace KWZTerrainECS
             bool isLeftTri = IsPointInTriangle(cell.LeftTriangle, position2D);
 
             //Ray origin
-            float3 rayOrigin = new float3(position2D.x, cell.HighestPoint, position2D.y);
+            float3 rayOrigin = new (position2D.x, cell.HighestPoint, position2D.y);
             //NORMAL
             float3 triangleNormal = isLeftTri ? cell.NormalTriangleLeft : cell.NormalTriangleRight;
             //Point A : start
