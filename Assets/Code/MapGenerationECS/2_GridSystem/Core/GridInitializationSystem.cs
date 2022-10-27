@@ -46,7 +46,9 @@ namespace KWZTerrainECS
             
         }
         
-        private ref BlobArray<Cell> GenerateGridTerrain(Entity terrainEntity, in TerrainAspectStruct terrainStruct)
+        private ref BlobArray<Cell> GenerateGridTerrain(
+            Entity terrainEntity, 
+            in TerrainAspectStruct terrainStruct)
         {
             DynamicBuffer<Entity> chunkEntities = EntityManager.GetBuffer<BufferChunk>(terrainEntity, true).Reinterpret<Entity>();
             using MeshDataArray meshDataArray = EntityManager.GetEntitiesMeshDataArray(chunkEntities.AsNativeArray());
@@ -79,7 +81,9 @@ namespace KWZTerrainECS
             // -------------------------------------------------------------------------------------------------------
             // INNER METHODS : Construct Grid nodes, Nodes are not ordered by chunk!
             // -------------------------------------------------------------------------------------------------------
-            BlobBuilderArray<Cell> ConstructGridArray(ref GridCells gridCells, in TerrainAspectStruct terrainStruct)
+            BlobBuilderArray<Cell> ConstructGridArray(
+                ref GridCells gridCells, 
+                in TerrainAspectStruct terrainStruct)
             {
                 int numVerticesX = terrainStruct.Terrain.NumVerticesXY.x;
                 int2 terrainQuadsXY = terrainStruct.Terrain.NumQuadsXY;

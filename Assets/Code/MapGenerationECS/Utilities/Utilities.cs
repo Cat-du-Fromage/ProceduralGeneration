@@ -103,7 +103,7 @@ namespace KWZTerrainECS
         }
         
         //==============================================================================================================
-        //Cell index inside Chunk from position
+        //Cell index inside Chunk from : position
         //==============================================================================================================
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -115,6 +115,18 @@ namespace KWZTerrainECS
             int2 chunkCoord = cellCoord / chunkNumQuadsPerLine;
             int2 cellCoordInChunk = cellCoord - (chunkCoord * chunkNumQuadsPerLine);
             return cellCoordInChunk.y * chunkNumQuadsPerLine + cellCoordInChunk.x;
+        }
+        
+        //==============================================================================================================
+        //Grid Cell index from : Cell index inside Chunk
+        //==============================================================================================================
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetGridCellIndexFromChunkCellIndex(int cellIndexInsideChunk, int chunkSizeX, int mapSizeX, int2 chunkCoord)
+        {
+            int2 cellCoordInChunk = GetXY2(cellIndexInsideChunk, chunkSizeX);
+            int2 cellFullGridCoord = chunkCoord * chunkSizeX + cellCoordInChunk;
+            return (cellFullGridCoord.y * mapSizeX) + cellFullGridCoord.x;
         }
         
         //==============================================================================================================

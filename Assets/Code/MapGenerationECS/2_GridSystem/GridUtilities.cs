@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -153,13 +154,31 @@ namespace KWZTerrainECS
             }
             return chunkCells;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetGridCellIndexFromChunkCellIndex(int cellIndexInsideChunk, int chunkSizeX, int mapSizeX, int2 chunkCoord)
+        public static NativeArray<GateWay> GetGateWaysAt(
+            this DynamicBuffer<ChunkNodeGrid> buffer, 
+            int chunkIndex, 
+            ESides side, 
+            in TerrainAspectStruct terrainStruct,
+            Allocator allocator = Temp)
         {
-            int2 cellCoordInChunk = GetXY2(cellIndexInsideChunk, chunkSizeX);
-            int2 cellFullGridCoord = chunkCoord * chunkSizeX + cellCoordInChunk;
-            return (cellFullGridCoord.y * mapSizeX) + cellFullGridCoord.x;
+            int chunkNumQuadPerLine = terrainStruct.Chunk.NumQuadPerLine;
+            int offsetChunk = chunkIndex * 4 * chunkNumQuadPerLine;
+            int startIndex = offsetChunk + (int)side * chunkNumQuadPerLine;
+            NativeArray<GateWay> gateWays = new (chunkNumQuadPerLine, allocator, UninitializedMemory);
+            /*
+            for (int i = 0; i < chunkNumQuadPerLine; i++)
+            {
+                gateWays[i] = buffer[startIndex + i].Value;
+            }
+            */
+            buffer
+                .AsNativeArray()
+                .Reinterpret<GateWay>()
+                .Slice(startIndex, chunkNumQuadPerLine)
+                .CopyTo(gateWays);
+            return gateWays;
         }
     }
 }

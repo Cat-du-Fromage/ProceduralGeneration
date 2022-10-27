@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -14,97 +13,139 @@ using static Unity.Collections.Allocator;
 using static Unity.Collections.NativeArrayOptions;
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
-
-using float2 = Unity.Mathematics.float2;
 using float3 = Unity.Mathematics.float3;
 
 namespace KWZTerrainECS
 {
-    public struct FlowFieldDirection
-    {
-        private byte Index;
-
-        public FlowFieldDirection(int direction)
-        {
-            Index = (byte)direction;
-        }
-        
-        public FlowFieldDirection(ESides direction)
-        {
-            Index = direction switch
-            {
-                ESides.Top    => 0, //ESides.Top
-                ESides.Bottom => 1, //ESides.Right
-                ESides.Right  => 2, //ESides.Bottom
-                ESides.Left   => 3, //ESides.Left
-            };
-        }
-
-        public readonly float2 Value
-        {
-            get 
-            {
-                return Index switch
-                {
-                    0 => new float2(0,1), //ESides.Top
-                    1 => new float2(1,0), //ESides.Right
-                    2 => new float2(0,-1), //ESides.Bottom
-                    3 => new float2(-1,0), //ESides.Left
-                };
-            }
-        }
-        
-    }
-    
-    public struct PathsComponent : IComponentData
-    {
-        public FixedList4096Bytes<FlowFieldDirection> Top;
-        public FixedList4096Bytes<FlowFieldDirection> Right;
-        public FixedList4096Bytes<FlowFieldDirection> Bottom;
-        public FixedList4096Bytes<FlowFieldDirection> Left;
-
-        public readonly FixedList4096Bytes<FlowFieldDirection> this[ESides index]
-        {
-            get
-            {
-                return index switch
-                {
-                    ESides.Top => Top,
-                    ESides.Right => Right,
-                    ESides.Bottom => Bottom,
-                    ESides.Left => Left,
-                    _ => throw new ArgumentOutOfRangeException(nameof(index), index, null)
-                };
-            }
-        }
-    }
-
+    [RequireMatchingQueriesForUpdate]
+    //[CreateAfter(typeof(TerrainInitializationSystem))]
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
+    [UpdateAfter(typeof(GridInitializationSystem))]
     public partial class FlowFieldSystem : SystemBase
     {
+        private Entity terrainEntity;
+        private EntityQuery terrainQuery;
         private EntityQuery chunksQuery;
+
+        protected override void OnCreate()
+        {
+            terrainQuery = GetEntityQuery(typeof(TagTerrain));
+            chunksQuery = GetEntityQuery(typeof(TagChunk));
+        }
+
+        protected override void OnStartRunning()
+        {
+            terrainEntity = terrainQuery.GetSingletonEntity();
+            TerrainAspectStruct terrainStruct = new(SystemAPI.GetAspectRO<TerrainAspect>(terrainEntity));
+            AddPathsComponentToChunks(terrainStruct);
+            
+            //CreateGridCells();
+        }
+        
+        
+
         protected override void OnUpdate()
         {
             
         }
 
-        private void CreateGridCells(in TerrainAspectStruct terrainStruct)
+        private void AddPathsComponentToChunks(TerrainAspectStruct terrainStruct)
         {
-            NativeArray<Entity> chunks = chunksQuery.ToEntityArray(Temp);
-            EntityManager.AddComponent<PathsComponent>(chunks);
+            DynamicBuffer<BufferChunk> chunksBuffer = GetBuffer<BufferChunk>(terrainEntity, true);
+            NativeArray<Entity> chunks = chunksBuffer.Reinterpret<Entity>().ToNativeArray(Temp);
+            
+            EntityCommandBuffer ecb = new (Temp);
+            int numChunk = cmul(terrainStruct.Terrain.NumChunksXY);
+            for (int i = 0; i < numChunk; i++)
+            {
+                ecb.AddBuffer<TopPathBuffer>(chunks[i]);
+                ecb.AddBuffer<BottomPathBuffer>(chunks[i]);
+                ecb.AddBuffer<RightPathBuffer>(chunks[i]);
+                ecb.AddBuffer<LeftPathBuffer>(chunks[i]);
+            }
+            ecb.Playback(EntityManager);
+        }
 
-            int numQuads = Square(terrainStruct.Chunk.NumQuadPerLine);
+        private void CreateGridCells()
+        {
+            TerrainAspectStruct terrainStruct = new(SystemAPI.GetAspectRO<TerrainAspect>(terrainEntity));
+            DynamicBuffer<BufferChunk> chunksBuffer = GetBuffer<BufferChunk>(terrainEntity, true);
+            using NativeArray<Entity> chunks = chunksBuffer.Reinterpret<Entity>().ToNativeArray(TempJob);
+            
+            EntityManager.AddComponent<PathsComponent>(chunks);
+            int chunkQuadPerLine = terrainStruct.Chunk.NumQuadPerLine;
+
+            int numChunkQuads = Square(chunkQuadPerLine);
+
+            using NativeArray<bool> obstacles = new (numChunkQuads, TempJob);
+            using NativeArray<byte> costField = new (numChunkQuads, TempJob);
+            //JIntegrationField.Process(chunkQuadPerLine, )
+            
             for (int chunkIndex = 0; chunkIndex < chunks.Length; chunkIndex++)
             {
-                for (int quadIndex = 0; quadIndex < numQuads; quadIndex++)
+                JobHandle costFieldJh = JCostField.Process(obstacles, costField);
+                costFieldJh.Complete();
+                PathsComponent pathsComponent = new PathsComponent();
+
+                //GetFlowFieldAtSide(chunkIndex, chunkQuadPerLine, costField, costFieldJh);
+                for (int i = 0; i < 4; i++)
                 {
+                    ESides side = (ESides)i;
+                    using NativeArray<int> bestCostField = new(numChunkQuads, TempJob);
+                    using NativeArray<GateWay> gateWays = GetGateWaysAtChunk(chunkIndex, (ESides)i);
                     
+                    JobHandle integrationJh = JIntegrationField
+                        .Process(chunkQuadPerLine, gateWays, costField, bestCostField);
+                    
+                    using NativeArray<FlowFieldDirection> cellBestDirection = new(numChunkQuads, TempJob, UninitializedMemory);
+                    JobHandle bestDirectionJh = JBestDirection
+                        .Process(side, chunkQuadPerLine, bestCostField, cellBestDirection, integrationJh);
+                    bestDirectionJh.Complete();
+                    
+                    //for (int j = 0; j < cellBestDirection.Length; j++)
+                    //{
+                    //    pathsComponent[side].Add(cellBestDirection[j]);
+                    //}
                 }
+                SetComponent(chunks[chunkIndex], pathsComponent);
             }
         }
 
-        private void GetFlowField()
+        private PathsComponent GetFlowFieldAtSide(
+            int chunkIndex, 
+            int chunkQuadPerLine, 
+            NativeArray<byte> costField, 
+            JobHandle costFieldJh)
         {
-            
+            int numChunkQuads = Square(chunkQuadPerLine);
+            PathsComponent pathsComponent = new PathsComponent();
+            for (int i = 0; i < 4; i++)
+            {
+                ESides side = (ESides)i;
+                using NativeArray<int> bestCostField = new(numChunkQuads, TempJob);
+                using NativeArray<GateWay> gateWays = GetGateWaysAtChunk(chunkIndex, (ESides)i);
+                    
+                JobHandle integrationJh = JIntegrationField
+                    .Process(chunkQuadPerLine, gateWays, costField, bestCostField, costFieldJh);
+                    
+                using NativeArray<FlowFieldDirection> cellBestDirection = new(numChunkQuads, TempJob, UninitializedMemory);
+                JobHandle bestDirectionJh = JBestDirection
+                    .Process(side, chunkQuadPerLine, bestCostField, cellBestDirection, integrationJh);
+                bestDirectionJh.Complete();
+
+                for (int j = 0; j < cellBestDirection.Length; j++)
+                {
+                    pathsComponent[side].Add(cellBestDirection[j]);
+                }
+            }
+            return pathsComponent;
+        }
+
+        private NativeArray<GateWay> GetGateWaysAtChunk(int chunkIndex, ESides side)
+        {
+            TerrainAspectStruct terrainStruct = new(SystemAPI.GetAspectRO<TerrainAspect>(terrainEntity));
+            DynamicBuffer<ChunkNodeGrid> buffer = GetBuffer<ChunkNodeGrid>(terrainEntity);
+            return buffer.GetGateWaysAt(chunkIndex, side, terrainStruct, TempJob);
         }
     }
     
@@ -129,7 +170,7 @@ namespace KWZTerrainECS
 
         public static JobHandle Process(NativeArray<bool> obstacles, NativeArray<byte> costField, JobHandle dependency = default)
         {
-            JCostField job = new JCostField(obstacles, costField);
+            JCostField job = new (obstacles, costField);
             return job.ScheduleParallel(costField.Length, JobWorkerCount - 1, dependency);
         }
     }
@@ -193,7 +234,7 @@ namespace KWZTerrainECS
             NativeArray<int> bestCostField,
             JobHandle dependency = default)
         {
-            JIntegrationField job = new JIntegrationField
+            JIntegrationField job = new()
             {
                 ChunkQuadPerLine = chunkQuadPerLine,
                 GateWays = gateWays,
@@ -206,17 +247,19 @@ namespace KWZTerrainECS
     
     public partial struct JBestDirection : IJobFor
     {
+        [ReadOnly] public ESides DefaultSide;
         [ReadOnly] public int NumCellX;
         [ReadOnly, NativeDisableParallelForRestriction] public NativeArray<int> BestCostField;
-        [WriteOnly, NativeDisableParallelForRestriction] public NativeArray<float3> CellBestDirection;
-
+        //[WriteOnly, NativeDisableParallelForRestriction] public NativeArray<float3> CellBestDirection;
+        [WriteOnly, NativeDisableParallelForRestriction] 
+        public NativeArray<FlowFieldDirection> CellBestDirection;
         public void Execute(int index)
         {
             int currentBestCost = BestCostField[index];
 
             if (currentBestCost >= ushort.MaxValue)
             {
-                CellBestDirection[index] = float3.zero;
+                CellBestDirection[index] = new FlowFieldDirection(DefaultSide);
                 return;
             }
 
@@ -230,7 +273,8 @@ namespace KWZTerrainECS
                     currentBestCost = BestCostField[currentNeighbor];
                     int2 neighborCoord = GetXY2(currentNeighbor, NumCellX);
                     int2 bestDirection = neighborCoord - currentCellCoord;
-                    CellBestDirection[index] = new float3(bestDirection.x, 0, bestDirection.y);
+                    CellBestDirection[index] = new FlowFieldDirection(bestDirection);
+                    //CellBestDirection[index] = new float3(bestDirection.x, 0, bestDirection.y);
                 }
             }
         }
@@ -245,6 +289,23 @@ namespace KWZTerrainECS
                 neighbors.AddNoResize(neighborId);
             }
             return neighbors;
+        }
+
+        public static JobHandle Process(
+            ESides side,
+            int chunkQuadPerLine, 
+            NativeArray<int> bestCostField,
+            NativeArray<FlowFieldDirection> cellBestDirection,
+            JobHandle dependency = default)
+        {
+            JBestDirection job = new()
+            {
+                DefaultSide = side,
+                NumCellX = chunkQuadPerLine,
+                BestCostField = bestCostField,
+                CellBestDirection = cellBestDirection
+            };
+            return job.ScheduleParallel(cellBestDirection.Length, JobWorkerCount - 1, dependency);
         }
     }
 }
