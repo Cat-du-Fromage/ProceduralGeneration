@@ -10,6 +10,7 @@ namespace KWZTerrainECS
         [SerializeField] private GameObject GridDebugPrefab;
         private class GridAuthoring : Baker<GridBaker>
         {
+            
             public override void Bake(GridBaker authoring)
             {
                 AddComponent<TagUnInitializeGrid>();

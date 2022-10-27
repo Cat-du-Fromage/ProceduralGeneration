@@ -102,62 +102,21 @@ namespace KWZTerrainECS
             return (int2)(pointPos.xz + (float2)mapXY / 2f);
         }
         
-<<<<<<< HEAD
-<<<<<<< Updated upstream
+        //==============================================================================================================
+        //Cell index inside Chunk from position
+        //==============================================================================================================
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CellChunkIndexFromGridIndex(in float3 pointPos, in int2 mapSizeXY, int chunkNumQuadsPerLine)
         {
             int gridIndex = GetIndexFromPositionOffset(pointPos, mapSizeXY);
             int2 cellCoord = GetXY2(gridIndex, mapSizeXY.x);
-            int2 chunkCoord = (int2)floor(cellCoord / chunkNumQuadsPerLine);
+            //before : (int2)floor(cellCoord / chunkNumQuadsPerLine);
+            int2 chunkCoord = cellCoord / chunkNumQuadsPerLine;
             int2 cellCoordInChunk = cellCoord - (chunkCoord * chunkNumQuadsPerLine);
             return cellCoordInChunk.y * chunkNumQuadsPerLine + cellCoordInChunk.x;
         }
-=======
->>>>>>> parent of d7d4b9e (Start FlowField Jobs Algorithm)
         
-        /*
-        public static float3 Get3DTranslatedPosition(this ref GridCells cells, float2 position2D, int2 mapSizeXY)
-        {
-            int cellIndex = GetIndexFromPositionOffset(position2D, mapSizeXY);
-            Cell cell = cells.Cells[cellIndex];
-
-            bool isLeftTri = IsPointInTriangle(cell.LeftTriangle, position2D);
-            //bool isRightTri = IsPointInTriangle(cell.RightTriangle, position2D);
-
-            //Ray origin
-            float3 rayOrigin = new float3(position2D.x, cell.HighestPoint, position2D.y);
-            //NORMAL
-            float3 triangleNormal = isLeftTri ? cell.NormalTriangleLeft : cell.NormalTriangleRight;
-            //Point A : start
-            float3 a = isLeftTri ? cell.LeftTriangle[0] : cell.RightTriangle[0];
-            float t = dot(a - rayOrigin, triangleNormal) / dot(down(), triangleNormal);
-            return mad(t,down(), rayOrigin);
-        }
-        
-        public static bool IsPointInTriangle(NativeSlice<float3> triangle, float2 position2D)
-        {
-            float2 triA = triangle[0].xz;
-            float2 triB = triangle[1].xz;
-            float2 triC = triangle[2].xz;
-            
-            bool isAEqualC = approximately(triC.y, triA.y);
-            float2 a = select(triA, triB, isAEqualC);
-            float2 b = select(triB, triA, isAEqualC);
-            
-            float s1 = triC.y - a.y;
-            float s2 = triC.x - a.x;
-
-            float s3 = b.y - a.y;
-            float s4 = position2D.y - a.y;
-
-            float w1 = (a.x * s1 + s4 * s2 - position2D.x * s1) / (s3 * s2 - (b.x - a.x) * s1);
-            float w2 = (s4 - w1 * s3) / s1;
-            return w1 >= 0 && w2 >= 0 && (w1 + w2) <= 1;
-        }
-        */
-=======
->>>>>>> Stashed changes
         //==============================================================================================================
         //MATH UTILITIES
         
@@ -201,6 +160,13 @@ namespace KWZTerrainECS
         {
             return a.x * a.y;
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Square(int value)
+        {
+            return value * value;
+        }
+
 
         //==============================================================================================================
         //MATH Extension

@@ -8,24 +8,26 @@ using static KWZTerrainECS.Utilities;
 
 namespace KWZTerrainECS
 {
-    public readonly struct GateWay
+    public struct GateWay
     {
         public readonly int ChunkIndex;
         public readonly ESides Side;
-        public readonly int Index;
-        public readonly int IndexAdjacent;
+        public readonly int ChunkCellIndex;
+        public readonly int GridCellIndex;
+        public readonly int AdjacentGridCellIndex;
         
-        public GateWay(int chunkIndex, ESides side, int index = -1, int indexAdj = -1)
+        public GateWay(int chunkIndex, ESides side, int chunkCellIndex = -1, int gridCellIndex = -1, int adjacentGridCellIndexAdj = -1)
         {
             ChunkIndex = chunkIndex;
             Side = side;
-            Index = index;
-            IndexAdjacent = indexAdj;
+            ChunkCellIndex = chunkCellIndex;
+            GridCellIndex = gridCellIndex;
+            AdjacentGridCellIndex = adjacentGridCellIndexAdj;
         }
 
         public override string ToString()
         {
-            return $"Gate in chunk : {Index}; adjacent: {IndexAdjacent}";
+            return $"Gate in chunk : {GridCellIndex}; adjacent: {AdjacentGridCellIndex}";
         }
     }
 }

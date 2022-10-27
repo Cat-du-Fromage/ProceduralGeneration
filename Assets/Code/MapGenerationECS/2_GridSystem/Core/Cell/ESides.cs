@@ -1,17 +1,14 @@
-<<<<<<< HEAD
 using System;
-=======
->>>>>>> parent of d7d4b9e (Start FlowField Jobs Algorithm)
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
+
+using static KWZTerrainECS.Utilities;
 
 namespace KWZTerrainECS
 {
-<<<<<<< HEAD
     [Flags]
-=======
->>>>>>> parent of d7d4b9e (Start FlowField Jobs Algorithm)
     public enum ESides : int
     {
         Top    = 0,
@@ -30,5 +27,23 @@ namespace KWZTerrainECS
             ESides.Left   => ESides.Right,
             _             => side
         };
+        
+        public static ESides GetDirection(int indexOrigin, int indexDest, int numChunkWidth)
+        {
+            int2 coordOrigin = GetXY2(indexOrigin, numChunkWidth);
+            int2 coordDest = GetXY2(indexDest, numChunkWidth);
+
+            int2 coordDiff = coordDest - indexOrigin;
+
+            if (coordDiff.x > 0)
+                return ESides.Right;
+            else if (coordDiff.x < 0)
+                return ESides.Left;
+            else if (coordDiff.y > 0)
+                return ESides.Top;
+            else //(coordDiff.y < 0)
+                return ESides.Bottom;
+            
+        }
     }
 }
