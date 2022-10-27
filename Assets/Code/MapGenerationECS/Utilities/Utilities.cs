@@ -39,12 +39,6 @@ namespace KWZTerrainECS
         // Chunk Index From GRID Index
         //==============================================================================================================
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int Square(int value)
-        {
-            return value * value;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ChunkIndexFromGridIndex(int gridIndex, int chunkNumQuadsX ,int numChunkX)
         {
             int2 cellCoord = GetXY2(gridIndex, chunkNumQuadsX * numChunkX);
@@ -108,6 +102,7 @@ namespace KWZTerrainECS
             return (int2)(pointPos.xz + (float2)mapXY / 2f);
         }
         
+<<<<<<< HEAD
 <<<<<<< Updated upstream
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CellChunkIndexFromGridIndex(in float3 pointPos, in int2 mapSizeXY, int chunkNumQuadsPerLine)
@@ -118,6 +113,8 @@ namespace KWZTerrainECS
             int2 cellCoordInChunk = cellCoord - (chunkCoord * chunkNumQuadsPerLine);
             return cellCoordInChunk.y * chunkNumQuadsPerLine + cellCoordInChunk.x;
         }
+=======
+>>>>>>> parent of d7d4b9e (Start FlowField Jobs Algorithm)
         
         /*
         public static float3 Get3DTranslatedPosition(this ref GridCells cells, float2 position2D, int2 mapSizeXY)

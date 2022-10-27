@@ -1,11 +1,17 @@
+<<<<<<< HEAD
 using System;
+=======
+>>>>>>> parent of d7d4b9e (Start FlowField Jobs Algorithm)
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace KWZTerrainECS
 {
+<<<<<<< HEAD
     [Flags]
+=======
+>>>>>>> parent of d7d4b9e (Start FlowField Jobs Algorithm)
     public enum ESides : int
     {
         Top    = 0,
