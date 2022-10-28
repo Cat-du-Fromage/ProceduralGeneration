@@ -47,20 +47,35 @@ namespace KWZTerrainECS
 
         protected override void OnUpdate()
         {
+            EntityManager.SetName(terrainEntity, "TerrainSingleton");
             StepTerrainGeneration();
+            EntityManager.RemoveComponent<TagUnInitializeTerrain>(terrainEntity);
         }
+        
+
 
         // ==========================================================================================================
         // STEP 1 : Terrain Generation
         // ==========================================================================================================
         private void StepTerrainGeneration()
         {
-            EntityManager.SetName(terrainEntity, "TerrainSingleton");
+            //EntityManager.SetName(terrainEntity, "TerrainSingleton");
             
             TerrainAspectStruct terrainStruct = new (EntityManager.GetAspectRO<TerrainAspect>(terrainEntity));
             BuildTerrain(terrainStruct);
             
-            EntityManager.RemoveComponent<TagUnInitializeTerrain>(terrainEntity);
+            //EntityManager.RemoveComponent<TagUnInitializeTerrain>(terrainEntity);
+        }
+        
+        private void RegisterChunksEntities(NativeArray<Entity> chunkArray)
+        {
+            if (!HasBuffer<LinkedEntityGroup>(terrainEntity))
+            {
+                EntityManager.AddBuffer<LinkedEntityGroup>(terrainEntity);
+            }
+            GetBuffer<LinkedEntityGroup>(terrainEntity).EnsureCapacity(chunkArray.Length);
+            DynamicBuffer<LinkedEntityGroup> bufferLinked = GetBuffer<LinkedEntityGroup>(terrainEntity);
+            bufferLinked.AddRange(chunkArray.Reinterpret<LinkedEntityGroup>());
         }
 
         private void BuildTerrain(in TerrainAspectStruct terrainStruct)
@@ -70,7 +85,7 @@ namespace KWZTerrainECS
 
             using NativeArray<Entity> chunkArray = CreateChunkEntities(terrainData.NumChunksXY);
             EntityManager.AddComponent<TagChunk>(chunkArray);
-            
+            //RegisterChunksEntities(chunkArray);
             RegisterAndNameChunks(chunkArray);
             SetChunkPosition(chunkArray, chunkData.NumQuadPerLine, terrainData.NumChunksXY);
             

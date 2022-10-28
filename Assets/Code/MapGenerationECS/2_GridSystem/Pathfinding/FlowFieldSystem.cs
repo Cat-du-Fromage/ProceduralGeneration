@@ -14,6 +14,7 @@ using static Unity.Collections.NativeArrayOptions;
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
 using float3 = Unity.Mathematics.float3;
+using int2 = Unity.Mathematics.int2;
 
 namespace KWZTerrainECS
 {
@@ -123,6 +124,7 @@ namespace KWZTerrainECS
             {
                 ESides side = (ESides)i;
                 using NativeArray<int> bestCostField = new(numChunkQuads, TempJob);
+                
                 using NativeArray<GateWay> gateWays = GetGateWaysAtChunk(chunkIndex, (ESides)i);
                     
                 JobHandle integrationJh = JIntegrationField
@@ -259,7 +261,7 @@ namespace KWZTerrainECS
 
             if (currentBestCost >= ushort.MaxValue)
             {
-                CellBestDirection[index] = new FlowFieldDirection(DefaultSide);
+                CellBestDirection[index] = new FlowFieldDirection(DefaultSide.Opposite());
                 return;
             }
 
@@ -306,6 +308,39 @@ namespace KWZTerrainECS
                 CellBestDirection = cellBestDirection
             };
             return job.ScheduleParallel(cellBestDirection.Length, JobWorkerCount - 1, dependency);
+        }
+    }
+
+    public partial struct JBestDirection2 : IJobFor
+    {
+        [ReadOnly] public ESides DefaultSide;
+        [ReadOnly] public int NumCellX;
+        
+        [NativeDisableParallelForRestriction]
+        public NativeArray<FlowFieldDirection> CellBestDirection;
+
+        public void Execute(int index)
+        {
+            FlowFieldDirection defaultOpposite = new (DefaultSide.Opposite());
+            FlowFieldDirection direction = CellBestDirection[index];
+            //direction.Value
+            if (direction == defaultOpposite) return;
+            
+            
+            int2 currentCoord = GetXY2(index, NumCellX);
+            int2 coordToCheck = currentCoord + (int2)direction.Value;
+            if (IsOutOfBound(coordToCheck)) return;
+            
+            int indexToCheck = coordToCheck.y * NumCellX + coordToCheck.x;
+            
+            
+        }
+
+        private bool IsOutOfBound(int2 coordToCheck)
+        {
+            bool xOutBound = coordToCheck.x < 0 || coordToCheck.x > NumCellX - 1;
+            bool yOutBound = coordToCheck.y < 0 || coordToCheck.y > NumCellX - 1;
+            return any(new bool2(xOutBound, yOutBound));
         }
     }
 }

@@ -45,7 +45,7 @@ namespace KWZTerrainECS
 #endif
             
         }
-        
+
         private ref BlobArray<Cell> GenerateGridTerrain(
             Entity terrainEntity, 
             in TerrainAspectStruct terrainStruct)
@@ -168,42 +168,5 @@ namespace KWZTerrainECS
                 OrderedVertices[fullMapIndex] = ChunkPosition + MeshVertices[index];
             }
         }
-
-#if UNITY_EDITOR
-        private void Test(NativeArray<float3> verticesNtv)
-        {
-            Entity terrain = GetSingletonEntity<TagTerrain>();
-            NativeArray<Entity> gridCheck = new(verticesNtv.Length, Temp, UninitializedMemory);
-            Entity prefabDebug = GetComponent<PrefabDebugGridSphere>(terrain).Prefab;
-            EntityManager.Instantiate(prefabDebug, gridCheck);
-            
-            for (int j = 0; j < verticesNtv.Length; j++)
-            {
-                Entity sphereDebug = gridCheck[j];
-                EntityManager.SetName(sphereDebug, $"cell_{j}");
-                SetComponent(sphereDebug, new Translation(){Value = verticesNtv[j]});
-            }
-        }
-
-        private void Test2(ref BlobArray<Cell> cells)
-        {
-            Entity terrain = GetSingletonEntity<TagTerrain>();
-            NativeArray<Entity> gridCheck = new(cells.Length*4, Temp, UninitializedMemory);
-            Entity prefabDebug = GetComponent<PrefabDebugGridSphere>(terrain).Prefab;
-            EntityManager.Instantiate(prefabDebug, gridCheck);
-            int index = 0;
-            for (int i = 0; i < cells.Length; i++)
-            {
-                Cell cell = cells[i];
-                for (int j = 0; j < cell.Vertices.Length; j++)
-                {
-                    Entity sphereDebug = gridCheck[index];
-                    EntityManager.SetName(sphereDebug, $"cell_{i}_{j}");
-                    SetComponent(sphereDebug, new Translation(){Value = cell.Vertices[j]});
-                    index += 1;
-                }
-            }
-        }
-#endif
     }
 }

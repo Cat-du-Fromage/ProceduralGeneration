@@ -1,4 +1,5 @@
-﻿using Unity.Mathematics;
+﻿using System;
+using Unity.Mathematics;
 
 namespace KWZTerrainECS
 {
@@ -59,6 +60,30 @@ namespace KWZTerrainECS
                 };
             }
         }
+
+        public static bool operator ==(FlowFieldDirection lhs, FlowFieldDirection rhs)
+        {
+            return lhs.Index == rhs.Index;
+        }
+
+        public static bool operator !=(FlowFieldDirection lhs, FlowFieldDirection rhs)
+        {
+            return lhs.Index != rhs.Index;
+        }
         
+        public bool Equals(FlowFieldDirection other)
+        {
+            return Index == other.Index;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is FlowFieldDirection other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return Index.GetHashCode();
+        }
     }
 }
