@@ -23,6 +23,16 @@ namespace KWZTerrainECS
                 (nativeArray[i], nativeArray[rightIndex]) = (nativeArray[rightIndex], nativeArray[i]);
             }
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Fill<T>(this NativeArray<T> nativeArray, T value)
+            where T : struct
+        {
+            for (int i = 0; i < nativeArray.Length; i++)
+            {
+                nativeArray[i] = value;
+            }
+        }
 
         // ===========================================================================================================
         // NativeList<T>

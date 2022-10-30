@@ -138,7 +138,7 @@ namespace KWZTerrainECS
         }
 
         [BurstCompile(CompileSynchronously = false)]
-        private struct JReorderMeshVertices : IJobFor
+        private partial struct JReorderMeshVertices : IJobFor
         {
             [ReadOnly] public int TerrainNumVertexPerLine;
             [ReadOnly] public int ChunkNumVertexPerLine;
