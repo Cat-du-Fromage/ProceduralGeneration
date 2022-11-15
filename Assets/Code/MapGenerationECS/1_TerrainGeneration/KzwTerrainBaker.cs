@@ -23,7 +23,8 @@ namespace KWZTerrainECS
                 chunksBuffer.EnsureCapacity(authoring.TerrainSettings.ChunksCount);
                 
                 AddComponent<TagTerrain>();
-                AddComponent<TagUnInitializeTerrain>();
+                //AddComponent<TagUnInitializeTerrain>();
+                AddComponent<TagInitialize>();
                 AddComponent(new PrefabChunk() { Value = GetEntity(authoring.TerrainSettings.ChunkSettings.Prefab) });
                 AddComponentObject(new ObjMaterialTerrain(){Value = authoring.ChunkMaterial});
                 

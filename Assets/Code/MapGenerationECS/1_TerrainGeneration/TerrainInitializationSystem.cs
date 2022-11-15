@@ -1,4 +1,4 @@
-using System;
+/*
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Physics.Authoring;
@@ -8,10 +8,8 @@ using Unity.Jobs;
 using UnityEngine;
 using Unity.Mathematics;
 using Unity.Physics;
-using Unity.Physics.Aspects;
 using Unity.Transforms;
 using UnityEngine.Rendering;
-
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
 using static UnityEngine.Mesh;
@@ -28,6 +26,7 @@ using MeshCollider = Unity.Physics.MeshCollider;
 
 namespace KWZTerrainECS
 {
+    [DisableAutoCreation]
     [RequireMatchingQueriesForUpdate]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial class TerrainInitializationSystem : SystemBase
@@ -97,7 +96,6 @@ namespace KWZTerrainECS
         /// <summary>
         /// Create Chunks
         /// </summary>
-        /// <param name="terrainEntity"></param>
         /// <param name="numChunkXY"></param>
         /// <returns></returns>
         private NativeArray<Entity> CreateChunkEntities(int2 numChunkXY)
@@ -110,7 +108,6 @@ namespace KWZTerrainECS
         /// <summary>
         /// Register Chunks in buffer and set their name (according to their index)
         /// </summary>
-        /// <param name="terrainEntity"></param>
         /// <param name="chunkEntities"></param>
         private void RegisterAndNameChunks(NativeArray<Entity> chunkEntities)
         {
@@ -321,7 +318,7 @@ namespace KWZTerrainECS
             public static JobHandle ScheduleParallel(
                 int chunkQuadsPerLine, int2 numChunkXY, NativeArray<float3> positions, JobHandle dependency = default)
             {
-                JGetChunkPositions job = new JGetChunkPositions
+                JGetChunkPositions job = new ()
                 {
                     ChunkQuadsPerLine = chunkQuadsPerLine,
                     NumChunksAxis = numChunkXY,
@@ -336,3 +333,4 @@ namespace KWZTerrainECS
         // ==========================================================================================================
     }
 }
+*/

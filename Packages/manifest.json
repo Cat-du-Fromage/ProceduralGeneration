@@ -1,12 +1,12 @@
 {
   "dependencies": {
     "com.unity.burst": "1.8.1",
-    "com.unity.collab-proxy": "1.17.6",
+    "com.unity.collab-proxy": "1.17.7",
     "com.unity.entities": "1.0.0-exp.12",
     "com.unity.entities.graphics": "1.0.0-exp.14",
     "com.unity.feature.development": "1.0.1",
     "com.unity.ide.rider": "3.0.16",
-    "com.unity.inputsystem": "1.4.3",
+    "com.unity.inputsystem": "1.4.4",
     "com.unity.physics": "1.0.0-exp.12",
     "com.unity.render-pipelines.high-definition": "14.0.3",
     "com.unity.textmeshpro": "3.0.6",

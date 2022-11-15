@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Burst;
-using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -82,9 +81,10 @@ namespace KWZTerrainECS
             if (!mouse.rightButton.wasReleasedThisFrame) return;
             
             float2 mousePosition = mouse.position.ReadValue();
+
             if (TerrainRaycast(out RaycastHit hit, mousePosition, 100))
             {
-                //Entity indicator = TestCreateEntityAt(hit.Position);
+                Entity indicator = TestCreateEntityAt(hit.Position);
                 int2 numChunkXY = GetComponent<DataTerrain>(TerrainEntity).NumChunksXY;
                 int chunkQuadsPerLine = GetComponent<DataChunk>(TerrainEntity).NumQuadPerLine;
                 
@@ -135,6 +135,42 @@ namespace KWZTerrainECS
             float3 direction = playerCamera.ScreenToWorldDirection(mousePosition, screenWidth, screenHeight);
             return EntityManager.Raycast(out hit, origin, direction, distance, 0);
         }
+
+/*
+        private bool TestColliderInternalCast(out RaycastHit hit, in float2 mousePosition, float distance)
+        {
+            bool getHit = false;
+            float3 origin = GetComponent<Translation>(cameraEntity).Value;
+            float3 direction = playerCamera.ScreenToWorldDirection(mousePosition, screenWidth, screenHeight);
+            
+            using NativeArray<Entity> chunks = GetBuffer<BufferChunk>(terrainQuery.GetSingletonEntity())
+                .ToNativeArray(TempJob).Reinterpret<Entity>();
+            
+            RaycastInput input = new RaycastInput()
+            {
+                Start = origin,
+                End = origin + direction * distance,
+                Filter = new CollisionFilter()
+                {
+                    BelongsTo = ~0u,
+                    CollidesWith = 1u << 0, // all 1s, so all layers, collide with everything
+                    GroupIndex = 0
+                }
+            };
+            
+            PhysicsCollider collider = GetComponent<PhysicsCollider>(chunks[0]);
+            getHit = collider.Value.Value.CastRay(input, out hit);
+            
+            for (int i = 1; i < chunks.Length; i++)
+            {
+                collider = GetComponent<PhysicsCollider>(chunks[i]);
+                getHit = collider.Value.Value.CastRay(input, out hit);
+                if (getHit) continue;
+            }
+
+            return getHit;
+        }
+        */
         //==============================================================================================================
 
         private void GetSharedUnitsPath(int destinationIndex, int chunkQuadsPerLine, int2 numChunkXY, JobHandle dependency = default)

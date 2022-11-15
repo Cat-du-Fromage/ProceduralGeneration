@@ -323,11 +323,14 @@ namespace KWZTerrainECS
 
             private bool IsCellOnEdge(int coord, int lastIndexWidth) => coord == 0 || coord == lastIndexWidth;
 
-            private bool IsCellOnCorner(int x, int y, int lastIndexWidth) => (x == 0 && y == 0) ||
-                                                                             (x == 0 && y == lastIndexWidth) ||
-                                                                             (x == lastIndexWidth && y == 0) ||
-                                                                             (x == lastIndexWidth &&
-                                                                              y == lastIndexWidth);
+            private bool IsCellOnCorner(int x, int y, int lastIndexWidth)
+            {
+                return (x == 0 && y == 0) ||
+                       (x == 0 && y == lastIndexWidth) ||
+                       (x == lastIndexWidth && y == 0) ||
+                       (x == lastIndexWidth &&
+                        y == lastIndexWidth);
+            }
         }
 
         [BurstCompile(CompileSynchronously = true)]

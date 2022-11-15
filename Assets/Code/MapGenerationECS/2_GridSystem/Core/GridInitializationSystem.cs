@@ -5,7 +5,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-
+using UnityEngine;
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
 using static UnityEngine.Mesh;
@@ -16,24 +16,33 @@ using static Unity.Collections.NativeArrayOptions;
 
 namespace KWZTerrainECS
 {
+    //[RequireMatchingQueriesForUpdate]
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    [UpdateAfter(typeof(TerrainInitializationSystem))]
+    [UpdateAfter(typeof(TerrainBuilderSystem))]
     public partial class GridInitializationSystem : SystemBase
     {
-        private EntityQuery unInitializeGridTerrainQuery;
+        //private EntityQuery initTerrainQuery;
+        private EntityQuery initGridTerrainQuery;
 
         protected override void OnCreate()
         {
-            unInitializeGridTerrainQuery = new EntityQueryBuilder(Temp)
-            .WithAll<TagUnInitializeGrid>()
-            .WithNone<TagUnInitializeTerrain>()
+            /*
+            initTerrainQuery = new EntityQueryBuilder(Temp)
+            .WithAll<TagTerrain>()
+            .WithNone<TagInitialize>()
             .Build(this);
-
-            RequireForUpdate(unInitializeGridTerrainQuery);
+            */
+            initGridTerrainQuery = new EntityQueryBuilder(Temp)
+            .WithAll<TagUnInitializeGrid>()
+            .Build(this);
+            
+            //RequireForUpdate(unInitializeGridTerrainQuery);
+            RequireForUpdate(initGridTerrainQuery);
         }
 
         protected override void OnUpdate()
         {
+            UnityEngine.Debug.Log($"Pass {initGridTerrainQuery.IsEmpty}");
             Entity terrain = GetSingletonEntity<TagTerrain>();
             TerrainAspectStruct terrainStruct = new (EntityManager.GetAspectRO<TerrainAspect>(terrain));
             

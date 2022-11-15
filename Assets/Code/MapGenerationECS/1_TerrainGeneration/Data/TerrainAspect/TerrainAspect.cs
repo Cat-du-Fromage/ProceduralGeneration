@@ -29,24 +29,53 @@ namespace KWZTerrainECS
         private readonly RefRO<DataNoise> DataNoise;
         
         [CreateProperty]
-        public readonly DataTerrain Terrain
+        public DataTerrain Terrain
         {
             get => DataTerrain.ValueRO;
             //set => DataTerrain.ValueRW = value;
         }
         
         [CreateProperty]
-        public readonly DataChunk Chunk
+        public DataChunk Chunk
         {
             get => DataChunk.ValueRO;
             //set => DataChunk.ValueRW = value;
         }
         
         [CreateProperty]
-        public readonly DataNoise Noise
+        public DataNoise Noise
         {
             get => DataNoise.ValueRO;
             //set => DataNoise.ValueRW = value;
         }
+        
+        /// <summary>Get Total number of chunks in the terrain.</summary>
+        public int NumChunks
+        {
+            get => DataTerrain.ValueRO.NumChunksXY.x * DataTerrain.ValueRO.NumChunksXY.y;
+        }
+
+        /// <summary>Get Rapid Access to chunk size.</summary>
+        public int ChunkNumQuadPerLine
+        {
+            get => DataChunk.ValueRO.NumQuadPerLine;
+        }
+
+        /// <summary>Get Rapid Access to Number chunks on X/Y.</summary>
+        public int2 NumChunkXY
+        {
+            get => DataTerrain.ValueRO.NumChunksXY;
+        }
+
+        public int ChunkNumVertices
+        {
+            get => DataChunk.ValueRO.VerticesCount;
+        }
+
+        public int ChunkNumTriangleIndices
+        {
+            get => DataChunk.ValueRO.TriangleIndicesCount;
+        }
+        
     }
 }

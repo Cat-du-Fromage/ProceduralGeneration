@@ -66,8 +66,8 @@ namespace RTTCamera
             {
                 //TRANSLATION
                 float3 cameraForwardXZ = new (transform.Forward.x, 0, transform.Forward.z);
-                half2 moveAxis = half2(camInputs.MoveAxis);
-                //float2 moveAxis = camInputs.MoveAxis;
+                //half2 moveAxis = half2(camInputs.MoveAxis);
+                int2 moveAxis = (int2)(camInputs.MoveAxis * 10);
                 
                 float3 cameraRightValue   = select(transform.Right, -transform.Right, moveAxis.x > 0);
                 float3 xAxisMove          = select(zero, cameraRightValue, moveAxis.x != 0);

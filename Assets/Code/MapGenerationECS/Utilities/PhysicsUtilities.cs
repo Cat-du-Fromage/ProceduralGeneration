@@ -23,9 +23,11 @@ namespace KWZTerrainECS
             // , call GetSingleton<PhysicsWorldSingleton>()/SystemAPI.GetSingleton<PhysicsWorldSingleton>() directly.
             //var builder = new EntityQueryBuilder(Temp).WithAll<PhysicsWorldSingleton>().Build(em);
             //using EntityQuery singletonQuery = DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(builder);
+            
             EntityQuery builder = new EntityQueryBuilder(Temp).WithAll<PhysicsWorldSingleton>().Build(em);
             PhysicsWorldSingleton physicsWorld = builder.GetSingleton<PhysicsWorldSingleton>();
-
+            
+            //TODO : MUST be stored inside an IComponentData
             RaycastInput input = new RaycastInput()
             {
                 Start = origin,
@@ -37,10 +39,10 @@ namespace KWZTerrainECS
                     GroupIndex = 0
                 }
             };
-            //bool haveHit = physicsWorld.CastRay(input, out hit);
-            //return haveHit;
-            
+
             using NativeReference<RaycastHit> rayHit = new (TempJob);
+            JSingleRaycast.Process(physicsWorld, input, rayHit);
+            /*
             JSingleRaycast job = new ()
             {
                 PhysicsWorld = physicsWorld,
@@ -48,6 +50,7 @@ namespace KWZTerrainECS
                 RayCastResult = rayHit
             };
             job.RunByRef();
+            */
             hit = rayHit.Value;
             
             return hit.Entity != Entity.Null;
@@ -87,12 +90,21 @@ namespace KWZTerrainECS
             [ReadOnly] public RaycastInput RayInput;
             [WriteOnly] public NativeReference<RaycastHit> RayCastResult;
             
-            
-
             public void Execute()
             {
                 PhysicsWorld.CastRay(RayInput, out RaycastHit hit);
                 RayCastResult.Value = hit;
+            }
+
+            public static void Process(PhysicsWorldSingleton physicsWorld, in RaycastInput rayInput, NativeReference<RaycastHit> rayCastResult)
+            {
+                JSingleRaycast job = new()
+                {
+                    PhysicsWorld = physicsWorld,
+                    RayInput = rayInput,
+                    RayCastResult = rayCastResult
+                };
+                job.RunByRef();
             }
         }
     }
