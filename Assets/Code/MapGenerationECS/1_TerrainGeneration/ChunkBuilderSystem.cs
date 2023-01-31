@@ -34,19 +34,20 @@ namespace KWZTerrainECS
             if (chunksInitQuery.IsEmpty) return;
             
             Material material = EntityManager.GetComponentObject<ObjMaterialTerrain>(terrainEntity).Value;
-            Mesh[] meshes = GenerateChunksMeshes(terrainAspect);
-            
+            Mesh[] meshes = GenerateChunksMeshes();
+
+            EntityCommandBuffer ecb = new (Temp);
             Entities
             .WithoutBurst()
             .WithStructuralChanges()
             .WithStoreEntityQueryInField(ref chunksInitQuery)
             .ForEach((Entity chunkEntity, in DataChunkIndex index) =>
             {
-                int chunkIndex = index.Value;
-                UpdateChunkMeshRenderer(chunkEntity, meshes[chunkIndex], material);
-                UpdateChunkCollider(chunkEntity, meshes[chunkIndex], terrainAspect.Chunk.TrianglesCount);
-                EntityManager.RemoveComponent<TagInitialize>(chunkEntity);
+                UpdateChunkMeshRenderer(chunkEntity, meshes[index.Value], material);
+                UpdateChunkCollider(chunkEntity, meshes[index.Value], terrainAspect.Chunk.TrianglesCount);
+                ecb.RemoveComponent<TagInitialize>(chunkEntity);
             }).Run();
+            ecb.Playback(EntityManager);
         }
 
         // =============================================================================================================
@@ -55,33 +56,31 @@ namespace KWZTerrainECS
         /// </summary>
         /// <param name="terrainStruct"></param>
         /// <returns></returns>
-        private Mesh[] GenerateChunksMeshes(in TerrainAspectStruct terrainStruct)
+        private Mesh[] GenerateChunksMeshes()
         {
-            int verticesCount = terrainStruct.Chunk.VerticesCount;
-            int triIndicesCount = terrainStruct.Chunk.TriangleIndicesCount;
-            int2 numChunksXY = terrainStruct.Terrain.NumChunksXY;
-            int numChunks = cmul(numChunksXY);
+            int numChunks = terrainAspect.NumChunks;
 
             Mesh[] chunkMeshes = new Mesh[numChunks];
             MeshDataArray meshDataArray = AllocateWritableMeshData(numChunks);
             
-            using (NativeArray<float> noiseMap = new (verticesCount, TempJob, UninitializedMemory))
+            using (NativeArray<float> noiseMap = new (terrainAspect.ChunkVerticesCount, TempJob, UninitializedMemory))
             {
                 NativeList<JobHandle> jobHandles = new (numChunks, Temp);
-                NativeArray<VertexAttributeDescriptor> vertexAttributes = InitializeVertexAttribute();
+                //NativeArray<VertexAttributeDescriptor> vertexAttributes = InitializeVertexAttribute();
                 for (int i = 0; i < numChunks; i++)
                 {
                     chunkMeshes[i] = new Mesh { name = $"ChunkMesh_{i}" };
-                    int2 coordCentered = GetXY2(i, numChunksXY.x) - numChunksXY / 2;
-                    MeshData meshData = InitMeshDataAt(i, vertexAttributes);
+                    int2 coordCentered = GetXYOffset(i, terrainAspect.NumChunksXY);
+                    MeshData meshData = meshDataArray[i];
+                    meshData.InitializeBufferParams(terrainAspect.ChunkVerticesCount, terrainAspect.ChunkTriangleIndicesCount);
                     
                     JobHandle dependency = i == 0 ? default : jobHandles[i - 1];
-                    JobHandle meshJobHandle = CreateMesh(meshData, coordCentered, terrainStruct, noiseMap, dependency);
+                    JobHandle meshJobHandle = CreateMesh(meshData, coordCentered, terrainAspect, noiseMap, dependency);
                     
                     jobHandles.Add(meshJobHandle);
                 }
                 jobHandles[^1].Complete();
-                SetSubMeshes();
+                meshDataArray.SetSubMeshes(terrainAspect.ChunkVerticesCount, terrainAspect.ChunkTriangleIndicesCount);
             };
             ApplyAndDisposeWritableMeshData(meshDataArray, chunkMeshes);
             return chunkMeshes;
@@ -90,20 +89,11 @@ namespace KWZTerrainECS
             // INTERNAL METHODS
             // -------------------------------------------------------------------------------------------------------
 
-            void SetSubMeshes()
-            {
-                SubMeshDescriptor descriptor = new(0, triIndicesCount) { vertexCount = verticesCount };
-                for (int i = 0; i < numChunks; i++)
-                {
-                    meshDataArray[i].SetSubMesh(0, descriptor, MeshUpdateFlags.DontRecalculateBounds);
-                }
-            }
-            
             JobHandle CreateMesh(MeshData meshData, 
                 in int2 coord, 
                 in TerrainAspectStruct terrainStruct, 
                 NativeArray<float> noiseMap, 
-                JobHandle dependency)
+                JobHandle dependency = default)
             {
                 JobHandle noiseJh    = SetNoiseJob(terrainStruct.Noise, terrainStruct.Chunk, coord, noiseMap, dependency);
                 JobHandle meshJh     = SetMeshJob(terrainStruct.Chunk, meshData, noiseMap, noiseJh);
@@ -111,25 +101,6 @@ namespace KWZTerrainECS
                 JobHandle tangentsJh = SetTangentsJob(terrainStruct.Chunk, meshData, normalsJh);
 
                 return tangentsJh;
-            }
-            
-            MeshData InitMeshDataAt(int index, NativeArray<VertexAttributeDescriptor> vertexAttributes)
-            {
-                MeshData meshData = meshDataArray[index];
-                meshData.subMeshCount = 1;
-                meshData.SetVertexBufferParams(verticesCount, vertexAttributes);
-                meshData.SetIndexBufferParams(triIndicesCount, IndexFormat.UInt16);
-                return meshData;
-            }
-            
-            NativeArray<VertexAttributeDescriptor> InitializeVertexAttribute()
-            {
-                NativeArray<VertexAttributeDescriptor> vertexAttributes = new(4, Temp, UninitializedMemory);
-                vertexAttributes[0] = new VertexAttributeDescriptor(Position, Float32, dimension: 3, stream: 0);
-                vertexAttributes[1] = new VertexAttributeDescriptor(Normal, Float32, dimension: 3, stream: 1);
-                vertexAttributes[2] = new VertexAttributeDescriptor(Tangent, Float16, dimension: 4, stream: 2);
-                vertexAttributes[3] = new VertexAttributeDescriptor(TexCoord0, Float16, dimension: 2, stream: 3);
-                return vertexAttributes;
             }
         }
 

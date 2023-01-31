@@ -99,6 +99,8 @@ namespace KWZTerrainECS
                 Entity chunkEntity = chunkEntities[i];
                 ecb.SetName(chunkEntity, $"Chunk_{i}");
                 ecb.AddComponent(chunkEntity, new DataChunkIndex(){Value = i});
+                ecb.AddComponent(chunkEntity, new Parent(){Value = entity});
+                ecb.AddComponent<LocalToParent>(chunkEntity);
                 SetComponent(chunkEntity, new Translation(){Value = positions[i]});
                 chunkBuffer[entity].Add(chunkEntities[i]);
             }

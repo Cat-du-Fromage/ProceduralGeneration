@@ -19,6 +19,13 @@ namespace KWZTerrainECS
             Chunk = aspect.Chunk;
             Noise = aspect.Noise;
         }
+
+        public readonly int NumChunks => Terrain.NumChunksXY.x * Terrain.NumChunksXY.y;
+        public readonly int2 NumChunksXY => Terrain.NumChunksXY;
+        public readonly int ChunkNumQuadsPerLine => Chunk.NumQuadPerLine;
+        public readonly int ChunkVerticesCount => Chunk.VerticesCount;
+        public readonly int ChunkTriangleIndicesCount => Chunk.TriangleIndicesCount;
+        
     }
     
     public readonly partial struct TerrainAspect : IAspect

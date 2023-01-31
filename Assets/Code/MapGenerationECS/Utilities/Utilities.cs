@@ -35,6 +35,14 @@ namespace KWZTerrainECS
             return new int2(x, y);
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int2 GetXYOffset(int index, in int2 sizeXY)
+        {
+            int y = index / sizeXY.x;
+            int x = index - (y * sizeXY.x);
+            return new int2(x, y) - sizeXY/2;
+        }
+        
         //==============================================================================================================
         // Chunk Index From GRID Index
         //==============================================================================================================

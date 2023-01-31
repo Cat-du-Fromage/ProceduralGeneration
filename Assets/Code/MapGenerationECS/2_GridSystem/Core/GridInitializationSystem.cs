@@ -5,7 +5,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
 using static UnityEngine.Mesh;
@@ -16,7 +15,7 @@ using static Unity.Collections.NativeArrayOptions;
 
 namespace KWZTerrainECS
 {
-    //[RequireMatchingQueriesForUpdate]
+    //[RequireMatchingQueriesForUpdate] CAREFULL equivalent of require ANY!
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     [UpdateAfter(typeof(TerrainBuilderSystem))]
     public partial class GridInitializationSystem : SystemBase
