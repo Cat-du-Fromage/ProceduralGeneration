@@ -4,7 +4,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-
+using UnityEngine;
 using static Unity.Entities.SystemAPI;
 using static Unity.Jobs.LowLevel.Unsafe.JobsUtility;
 using static Unity.Mathematics.math;
@@ -99,9 +99,15 @@ namespace KWZTerrainECS
                 Entity chunkEntity = chunkEntities[i];
                 ecb.SetName(chunkEntity, $"Chunk_{i}");
                 ecb.AddComponent(chunkEntity, new DataChunkIndex(){Value = i});
-                ecb.AddComponent(chunkEntity, new Parent(){Value = entity});
-                ecb.AddComponent<LocalToParent>(chunkEntity);
-                SetComponent(chunkEntity, new Translation(){Value = positions[i]});
+                
+                //BROKEN SINCE THE NEW UPDATE: 
+                //ecb.AddComponent(chunkEntity, new Parent(){Value = entity});
+                //ecb.AddComponent<ParentTransform>(chunkEntity);
+                //Debug.Log($"chunk position at : {positions[i]}");
+                GetAspectRW<TransformAspect>(chunkEntity).TranslateWorld(positions[i]);
+                
+                //SystemAPI.GetComponent<WorldTransform>(chunkEntity).Translate(positions[i]);
+                //SystemAPI.SetComponent(chunkEntity, new WorldTransform(){Position = positions[i]});
                 chunkBuffer[entity].Add(chunkEntities[i]);
             }
             ecb.Playback(EntityManager);

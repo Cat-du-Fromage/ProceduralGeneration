@@ -135,7 +135,8 @@ namespace KWZTerrainECS
                     TerrainNumVertexPerLine = terrainStruct.Terrain.NumVerticesXY.x,
                     ChunkNumVertexPerLine = terrainStruct.Chunk.NumVerticesPerLine,
                     ChunkCoord = chunkCoord,
-                    ChunkPosition = GetComponent<Translation>(chunkEntities[chunkIndex]).Value,
+                    ChunkPosition = SystemAPI.GetAspectRO<TransformAspect>(chunkEntities[chunkIndex]).WorldPosition,
+                    //ChunkPosition = SystemAPI.GetComponent<WorldTransform>(chunkEntities[chunkIndex]).Position,
                     MeshVertices = meshDataArray[chunkIndex].GetVertexData<float3>(stream: 0),
                     OrderedVertices = verticesNtv
                 }.ScheduleParallel(numChunkVertices,JobWorkerCount - 1,default);

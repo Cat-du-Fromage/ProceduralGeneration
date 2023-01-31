@@ -21,16 +21,16 @@ namespace KWZTerrainECS
     {
         private void Test(NativeArray<float3> verticesNtv)
         {
-            Entity terrain = GetSingletonEntity<TagTerrain>();
+            Entity terrain = SystemAPI.GetSingletonEntity<TagTerrain>();
             NativeArray<Entity> gridCheck = new(verticesNtv.Length, Temp, UninitializedMemory);
-            Entity prefabDebug = GetComponent<PrefabDebugGridSphere>(terrain).Prefab;
+            Entity prefabDebug = SystemAPI.GetComponent<PrefabDebugGridSphere>(terrain).Prefab;
             EntityManager.Instantiate(prefabDebug, gridCheck);
             
             for (int j = 0; j < verticesNtv.Length; j++)
             {
                 Entity sphereDebug = gridCheck[j];
                 EntityManager.SetName(sphereDebug, $"cell_{j}");
-                SetComponent(sphereDebug, new Translation(){Value = verticesNtv[j]});
+                SystemAPI.SetComponent(sphereDebug, new WorldTransform(){Position = verticesNtv[j]});
             }
         }
 
@@ -48,7 +48,8 @@ namespace KWZTerrainECS
                 {
                     Entity sphereDebug = gridCheck[index];
                     EntityManager.SetName(sphereDebug, $"cell_{i}_{j}");
-                    SetComponent(sphereDebug, new Translation(){Value = cell.Vertices[j]});
+                    SystemAPI.GetComponent<WorldTransform>(sphereDebug).Translate(cell.Vertices[j]);
+                    //SystemAPI.SetComponent(sphereDebug, new WorldTransform(){Position = cell.Vertices[j]});
                     index += 1;
                 }
             }

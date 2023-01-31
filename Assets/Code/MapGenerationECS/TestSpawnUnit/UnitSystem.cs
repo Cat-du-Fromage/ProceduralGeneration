@@ -50,7 +50,7 @@ namespace KWZTerrainECS
                 .Build(this);
             
             unitQuery = new EntityQueryBuilder(Temp)
-                .WithAll<TagUnit, EnableChunkDestination, Translation>()
+                .WithAll<TagUnit, EnableChunkDestination, WorldTransform>()
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState)
                 .Build(this);
             
@@ -65,7 +65,8 @@ namespace KWZTerrainECS
             
             cameraEntity = cameraQuery.GetSingletonEntity();
             playerCamera = EntityManager.GetComponentObject<Camera>(cameraEntity);
-
+            
+            //Debug.Log($"Is camera Null ? : {cameraEntity == Entity.Null}; {playerCamera.name}");
             mouse = Mouse.current;
         }
 
@@ -81,7 +82,7 @@ namespace KWZTerrainECS
             if (!mouse.rightButton.wasReleasedThisFrame) return;
             
             float2 mousePosition = mouse.position.ReadValue();
-
+            Debug.Log($"catch mouse at : {mousePosition}");
             if (TerrainRaycast(out RaycastHit hit, mousePosition, 100))
             {
                 Entity indicator = TestCreateEntityAt(hit.Position);
@@ -98,8 +99,8 @@ namespace KWZTerrainECS
         // On arbitrary key pressed
         private void CreateUnits(Entity terrain, int spawnIndex)
         {
-            Entity prefab = GetComponent<PrefabUnit>(terrain).Prefab;
-            ref GridCells gridSystem = ref GetComponent<BlobCells>(terrain).Blob.Value;
+            Entity prefab = SystemAPI.GetComponent<PrefabUnit>(terrain).Prefab;
+            ref GridCells gridSystem = ref SystemAPI.GetComponent<BlobCells>(terrain).Blob.Value;
             
             NativeArray<Cell> spawnCells = gridSystem.GetCellsAtChunk(spawnIndex,Temp);
             NativeArray<Entity> units = EntityManager.Instantiate(prefab, spawnCells.Length, Temp);
@@ -111,8 +112,9 @@ namespace KWZTerrainECS
             {
                 Entity unit = units[i];
                 EntityManager.SetName(unit, $"UnitTest_{i}");
-                SetComponent(unit, new Translation(){Value = spawnCells[i].Center});
-                SetComponent(unit, new EnableChunkDestination(){Index = spawnIndex});
+                SystemAPI.GetAspectRW<TransformAspect>(unit).TranslateWorld(spawnCells[i].Center);
+                //SystemAPI.SetComponent(unit, new WorldTransform(){Position = spawnCells[i].Center});
+                SystemAPI.SetComponent(unit, new EnableChunkDestination(){Index = spawnIndex});
                 EntityManager.SetComponentEnabled<EnableChunkDestination>(unit, false);
                 
                 EntityManager.AddBuffer<BufferPathList>(unit);
@@ -131,7 +133,13 @@ namespace KWZTerrainECS
         //Mouses Positions
         private bool TerrainRaycast(out RaycastHit hit, in float2 mousePosition, float distance)
         {
-            float3 origin = GetComponent<Translation>(cameraEntity).Value;
+            float3 origin = SystemAPI.GetComponent<WorldTransform>(cameraEntity).Position;
+            //for some reason since update, camera ref is destroyed at start and need to be reassigned
+            if (playerCamera == null)
+            {
+                playerCamera = EntityManager.GetComponentObject<Camera>(cameraEntity);
+                Debug.Log($"Is camera Null ? : {cameraEntity == Entity.Null}; {playerCamera.name}");
+            }
             float3 direction = playerCamera.ScreenToWorldDirection(mousePosition, screenWidth, screenHeight);
             return EntityManager.Raycast(out hit, origin, direction, distance, 0);
         }
@@ -185,7 +193,9 @@ namespace KWZTerrainECS
                 NumChunkXY = numChunkXY,
                 ChunkStartIndices = chunkStartIndices.AsParallelWriter(),
             };
-            assignDestinationJob.ScheduleParallel(unitQuery, Dependency).Complete();
+            JobHandle jh = assignDestinationJob.ScheduleParallel(unitQuery, dependency);
+            jh.Complete();
+            
             AssignPathsToEntities();
 
             // -------------------------------------------------------------------------------------------------------
@@ -217,9 +227,11 @@ namespace KWZTerrainECS
         private Entity TestCreateEntityAt(float3 position)
         {
             Entity terrain = terrainQuery.GetSingletonEntity();
-            Entity prefab = GetComponent<PrefabUnit>(terrain).Prefab;
+            Entity prefab = SystemAPI.GetComponent<PrefabUnit>(terrain).Prefab;
             Entity spawn = EntityManager.Instantiate(prefab);
-            SetComponent(spawn, new Translation(){Value = position});
+            SystemAPI.GetAspectRW<TransformAspect>(spawn).TranslateWorld(position);
+            //SystemAPI.SetComponent(spawn, new WorldTransform(){Position = position});
+            //SetComponent(spawn, new WorldTransform(){Position = position});
             return spawn;
         }
 #endif
@@ -232,9 +244,9 @@ namespace KWZTerrainECS
         [ReadOnly] public int2 NumChunkXY;
         [ReadOnly] public NativeList<int> SharedPathList;
         
-        public void Execute(in Translation position, ref DynamicBuffer<BufferPathList> pathList)
+        public void Execute(in WorldTransform position, ref DynamicBuffer<BufferPathList> pathList)
         {
-            int startChunkIndex = ChunkIndexFromPosition(position.Value, NumChunkXY, ChunkQuadsPerLine);
+            int startChunkIndex = ChunkIndexFromPosition(position.Position, NumChunkXY, ChunkQuadsPerLine);
             //Debug.Log($"startChunkIndex: {startChunkIndex}; SharedPathList[0] : {SharedPathList[0]}");
             if (startChunkIndex != SharedPathList[0]/*SharedPathList[^1]*/) return;
             pathList.CopyFrom(SharedPathList.AsArray().Reinterpret<BufferPathList>());
@@ -251,9 +263,9 @@ namespace KWZTerrainECS
         [WriteOnly, NativeDisableParallelForRestriction]
         public NativeParallelHashSet<int>.ParallelWriter ChunkStartIndices;
         
-        public void Execute(in Translation position, ref EnableChunkDestination enableDest)
+        public void Execute(in WorldTransform position, ref EnableChunkDestination enableDest)
         {
-            int startChunkIndex = ChunkIndexFromPosition(position.Value, NumChunkXY, ChunkQuadsPerLine);
+            int startChunkIndex = ChunkIndexFromPosition(position.Position, NumChunkXY, ChunkQuadsPerLine);
             ChunkStartIndices.Add(startChunkIndex);
             enableDest.Index = ChunkDestinationIndex;
         }
